@@ -178,7 +178,7 @@ export default function CareersPage() {
               </h2>
 
               <p className="text-white/70 mb-6 leading-relaxed">
-                At Global Reach Solutions, we're building a world where geographical boundaries no longer limit access
+                At ShipGlobal Solutions, we're building a world where geographical boundaries no longer limit access
                 to products and services. Our team is passionate about connecting people with the global marketplace and
                 creating innovative solutions to complex logistics challenges.
               </p>
@@ -206,7 +206,7 @@ export default function CareersPage() {
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl overflow-hidden">
                 <Image
                   src="/placeholder.svg?height=600&width=800&text=Team Photo"
-                  alt="Global Reach team"
+                  alt="ShipGlobal team"
                   width={800}
                   height={600}
                   className="w-full h-auto"
@@ -233,7 +233,7 @@ export default function CareersPage() {
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
-                Life at Global Reach
+                Life at ShipGlobal
               </span>
             </h2>
 

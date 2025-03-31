@@ -34,7 +34,7 @@ export default function AboutPage() {
       year: "2015",
       title: "Company Founded",
       description:
-        "Global Reach Solutions was established with a vision to break down international shopping barriers.",
+        "ShipGlobal Solutions was established with a vision to break down international shopping barriers.",
     },
     {
       year: "2017",
@@ -102,7 +102,7 @@ export default function AboutPage() {
       name: "Alexandra Chen",
       position: "Founder & CEO",
       image: "/placeholder.svg?height=300&width=300",
-      bio: "With over 15 years in international logistics, Alexandra founded Global Reach to revolutionize cross-border shopping.",
+      bio: "With over 15 years in international logistics, Alexandra founded ShipGlobal to revolutionize cross-border shopping.",
     },
     {
       name: "Marcus Johnson",
@@ -126,7 +126,7 @@ export default function AboutPage() {
 
   return (
     <main className="bg-[#030303] text-white">
-      <PageHeader title="About Us" subtitle="Our story, mission, and the team behind Global Reach" />
+      <PageHeader title="About Us" subtitle="Our story, mission, and the team behind ShipGlobal" />
 
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 md:px-6">
@@ -145,7 +145,7 @@ export default function AboutPage() {
               </h2>
 
               <p className="text-white/70 mb-6 leading-relaxed">
-                Global Reach Solutions was founded in 2015 with a simple yet powerful vision: to break down the barriers
+                ShipGlobal Solutions was founded in 2015 with a simple yet powerful vision: to break down the barriers
                 that prevent consumers and businesses from accessing products worldwide.
               </p>
 
@@ -173,7 +173,7 @@ export default function AboutPage() {
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl overflow-hidden">
                 <Image
                   src="/placeholder.svg?height=600&width=800"
-                  alt="Global Reach team"
+                  alt="ShipGlobal team"
                   width={800}
                   height={600}
                   className="w-full h-auto"
@@ -373,7 +373,7 @@ export default function AboutPage() {
                 </h2>
                 <p className="text-white/70 max-w-2xl mx-auto">
                   Experience the freedom of shopping without borders and join thousands of satisfied customers who have
-                  expanded their horizons with Global Reach.
+                  expanded their horizons with ShipGlobal.
                 </p>
               </motion.div>
 

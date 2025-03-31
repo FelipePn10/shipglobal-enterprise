@@ -137,8 +137,8 @@ export default function LoginPage() {
             className="text-center mb-8"
           >
             <Link href="/" className="inline-flex items-center gap-2 mb-6">
-              <Image src="https://kokonutui.com/logo.svg" alt="Global Reach Solutions" width={30} height={30} />
-              <span className="text-xl font-bold text-white">Global Reach</span>
+              <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={30} height={30} />
+              <span className="text-xl font-bold text-white">ShipGlobal</span>
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-white/60">Sign in to access your account</p>

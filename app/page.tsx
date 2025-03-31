@@ -6,11 +6,13 @@ import ExpertiseSection from "@/components/sections/expertise-section"
 import ServicesSection from "@/components/sections/services-section"
 import CtaSection from "@/components/sections/cta-section"
 import Footer from "@/components/sections/footer"
+import Navbar from "@/components/navigation/navbar"
 
 export default function Home() {
   return (
     <main className="bg-[#030303] text-white">
-      <HeroGeometric badge="Global Reach Solutions" title1="International" title2="Product Access" />
+      <Navbar />
+      <HeroGeometric badge="ShipGlobal Solutions" title1="International" title2="Product Access" />
       <AboutSection />
       <HowItWorksSection />
       <BenefitsSection />

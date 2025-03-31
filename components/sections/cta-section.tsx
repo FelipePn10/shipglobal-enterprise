@@ -62,12 +62,12 @@ export default function CtaSection() {
               viewport={{ once: true }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white font-medium px-6 py-3">
-                Get Started Now <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-              <Button variant="outline" className="border-white/10 hover:bg-white/[0.03] text-white/80">
-                Learn More About Our Process
-              </Button>
+              <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white font-medium px-6 py-3 flex items-center">
+              Get Started Now <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <Button variant="outline" className="border border-white/20 text-gray-400 bg-black/30 p-4 rounded-lg hover:bg-white/10 hover:text-white transition-colors duration-300">
+              Learn More About Our Process
+            </Button>
             </motion.div>
 
             <motion.div
