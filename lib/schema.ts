@@ -1,5 +1,5 @@
-import { mysqlTable, int, varchar, boolean, datetime } from "drizzle-orm/mysql-core";
-import { sql } from "drizzle-orm"; 
+import { mysqlTable, int, varchar, boolean, datetime, text } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
 
 export const companies = mysqlTable("companies", {
   id: int("id").primaryKey().autoincrement(),
@@ -21,4 +21,24 @@ export const companies = mysqlTable("companies", {
   updatedAt: datetime("updatedAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
   hasPurchaseManager: boolean("hasPurchaseManager").default(false).notNull(),
   status: varchar("status", { length: 50 }).default("pending").notNull(),
+});
+
+export const users = mysqlTable("users", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").references(() => companies.id).notNull(), // Relaciona com a empresa
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }).notNull(), // "admin" ou "purchase_manager"
+  createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const messages = mysqlTable("messages", {
+  id: int("id").primaryKey().autoincrement(),
+  senderId: int("sender_id").references(() => users.id).notNull(),
+  receiverId: int("receiver_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
 });

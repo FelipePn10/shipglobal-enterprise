@@ -8,6 +8,30 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  backend:
+    image: backend-image # Buildado separadamente
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   mysql-data:
