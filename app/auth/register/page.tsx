@@ -43,7 +43,6 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    // Calculate form progress based on filled fields
     const requiredFields = [
       'companyName', 'cnpj', 'corporateEmail', 'adminFirstName', 
       'adminLastName', 'industry', 'country', 'state', 'city', 
