@@ -1,258 +1,281 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { motion } from "framer-motion"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Lock, Mail } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import ElegantShape from "@/components/kokonutui/elegant-shape"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { signIn } from "next-auth/react";
+import { Mail, Lock, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  })
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-    general: "",
-  })
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [animateBackground, setAnimateBackground] = useState(0);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    // Clear error when user starts typing
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
-    }
-  }
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, rememberMe: checked }))
-  }
-
-  const validateForm = () => {
-    let valid = true
-    const newErrors = { ...errors }
-
-    if (!formData.email) {
-      newErrors.email = "Email is required"
-      valid = false
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-      valid = false
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-      valid = false
-    }
-
-    setErrors(newErrors)
-    return valid
-  }
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimateBackground(prev => (prev + 1) % 3);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    if (!validateForm()) return
+    // Simulação de validação visual
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    setLoading(true)
-    setErrors({ email: "", password: "", general: "" })
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // For demo purposes, we'll just redirect to a dashboard
-      // In a real app, you would handle authentication here
-      router.push("/dashboard")
-    } catch (error) {
-      setErrors({
-        ...errors,
-        general: "Invalid email or password. Please try again.",
-      })
-    } finally {
-      setLoading(false)
+    if (result?.error) {
+      setError("Credenciais inválidas ou conta não aprovada");
+      setLoading(false);
+    } else {
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = "/dashboard"; 
+      }, 1500);
     }
-  }
+  };
 
   const fadeInVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.8,
-        delay: 0.3 + i * 0.1,
-        ease: [0.25, 0.4, 0.25, 1],
-      },
+      transition: { duration: 0.8, delay: 0.3 + i * 0.1, ease: [0.25, 0.4, 0.25, 1] },
     }),
-  }
+  };
+
+  // Animação para os elementos de fundo
+  const backgroundVariants = {
+    gradient1: { 
+      backgroundPosition: ["0% 0%", "100% 100%"], 
+      transition: { duration: 20, ease: "linear", repeat: Infinity, repeatType: "reverse" } 
+    },
+    gradient2: { 
+      backgroundPosition: ["100% 0%", "0% 100%"], 
+      transition: { duration: 15, ease: "linear", repeat: Infinity, repeatType: "reverse" } 
+    },
+    gradient3: { 
+      scale: [1, 1.1, 1], 
+      transition: { duration: 8, repeat: Infinity } 
+    }
+  };
+
+  const floatingShapeVariants = {
+    animate: {
+      y: [0, -15, 0],
+      transition: {
+        duration: 6,
+        repeat: Infinity,
+        repeatType: "reverse",
+        ease: "easeInOut",
+      },
+    },
+  };
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#030303]">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
-
-      {/* Background shapes */}
+      {/* Fundos animados */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-purple-500/5 to-rose-500/10 blur-3xl"
+        animate={animateBackground === 0 ? "gradient1" : (animateBackground === 1 ? "gradient2" : "gradient3")}
+        variants={backgroundVariants}
+      />
+      
+      {/* Formas flutuantes */}
       <div className="absolute inset-0 overflow-hidden">
-        <ElegantShape
-          delay={0.3}
-          width={600}
-          height={140}
-          rotate={12}
-          gradient="from-indigo-500/[0.15]"
-          className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
+        <motion.div 
+          animate="animate"
+          variants={floatingShapeVariants}
+          className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 blur-2xl top-16 -left-20" 
         />
-
-        <ElegantShape
-          delay={0.5}
-          width={500}
-          height={120}
-          rotate={-15}
-          gradient="from-rose-500/[0.15]"
-          className="right-[-5%] md:right-[0%] top-[70%] md:top-[75%]"
+        <motion.div 
+          animate="animate"
+          variants={floatingShapeVariants}
+          initial={{ y: 20 }}
+          className="absolute w-96 h-96 rounded-full bg-gradient-to-r from-blue-400/10 to-cyan-300/10 blur-2xl bottom-32 -right-20" 
+        />
+        <motion.div 
+          animate="animate"
+          variants={floatingShapeVariants}
+          initial={{ y: -30 }}
+          className="absolute w-80 h-80 rounded-full bg-gradient-to-r from-rose-500/10 to-pink-500/10 blur-2xl top-1/2 left-1/2" 
         />
       </div>
 
+      {/* Painel de login */}
       <div className="relative z-10 w-full max-w-md px-4 py-8">
-        <div className="bg-white/[0.03] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-8 shadow-xl">
-          <motion.div
-            custom={0}
-            variants={fadeInVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-center mb-8"
-          >
-            <Link href="/" className="inline-flex items-center gap-2 mb-6">
-              <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={30} height={30} />
-              <span className="text-xl font-bold text-white">ShipGlobal</span>
+        <motion.div 
+          className="bg-white/[0.05] backdrop-blur-lg border border-white/[0.08] rounded-2xl p-8 shadow-2xl overflow-hidden"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        >
+          {/* Efeito de luz nos cantos */}
+          <div className="absolute top-0 left-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-2xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          
+          <motion.div custom={0} variants={fadeInVariants} initial="hidden" animate="visible" className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
+              <motion.div 
+                whileHover={{ rotate: 360 }} 
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                className="relative w-10 h-10 flex items-center justify-center"
+              >
+                <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={30} height={30} className="z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-rose-500 rounded-full blur opacity-60 group-hover:opacity-100 transition-opacity" />
+              </motion.div>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">ShipGlobal</span>
             </Link>
-            <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-white/60">Sign in to access your account</p>
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80 mb-2">Login Empresarial</h1>
+            <p className="text-white/60">Acesse sua conta empresarial</p>
           </motion.div>
 
-          {errors.general && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-200 text-sm text-center"
-            >
-              {errors.general}
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 text-rose-400 text-center p-3 mb-4 bg-rose-500/10 border border-rose-500/20 rounded-lg"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <p className="text-sm">{error}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit}>
-            <motion.div
-              custom={1}
-              variants={fadeInVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4 mb-6"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white/70">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40 h-4 w-4" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={cn(
-                      "pl-10 bg-white/[0.03] border-white/10 text-white",
-                      errors.email && "border-rose-500/50 focus-visible:ring-rose-500/20",
-                    )}
-                  />
-                </div>
-                {errors.email && <p className="text-rose-400 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label htmlFor="password" className="text-white/70">
-                    Password
-                  </Label>
-                  <Link href="/auth/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300">
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40 h-4 w-4" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={cn(
-                      "pl-10 bg-white/[0.03] border-white/10 text-white",
-                      errors.password && "border-rose-500/50 focus-visible:ring-rose-500/20",
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white/70"
+            <AnimatePresence mode="wait">
+              {success ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center justify-center py-6"
+                >
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-rose-500 rounded-full flex items-center justify-center mb-4"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-rose-400 text-xs mt-1">{errors.password}</p>}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="rememberMe"
-                  checked={formData.rememberMe}
-                  onCheckedChange={handleCheckboxChange}
-                  className="data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
-                />
-                <Label htmlFor="rememberMe" className="text-sm text-white/70">
-                  Remember me
-                </Label>
-              </div>
-            </motion.div>
-
-            <motion.div custom={2} variants={fadeInVariants} initial="hidden" animate="visible">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white font-medium"
-              >
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-
-              <p className="mt-6 text-center text-white/60 text-sm">
-                Don't have an account?{" "}
-                <Link href="/auth/register" className="text-indigo-400 hover:text-indigo-300 font-medium">
-                  Create account
-                </Link>
-              </p>
-            </motion.div>
+                    <CheckCircle2 className="h-8 w-8 text-white" />
+                  </motion.div>
+                  <h3 className="text-xl font-medium text-white mb-2">Login bem-sucedido!</h3>
+                  <p className="text-white/60 text-center">Redirecionando para seu dashboard...</p>
+                </motion.div>
+              ) : (
+                <>
+                  <motion.div custom={1} variants={fadeInVariants} initial="hidden" animate="visible" className="space-y-4 mb-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className={`transition-colors duration-200 ${focusedField === 'email' ? 'text-indigo-400' : 'text-white/80'}`}>Email Corporativo</Label>
+                      <div className="relative group">
+                        <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-200 ${focusedField === 'email' ? 'text-indigo-400' : 'text-white/40'}`} />
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          value={email} 
+                          onChange={(e) => setEmail(e.target.value)} 
+                          onFocus={() => setFocusedField('email')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="contato@empresa.com" 
+                          className="pl-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all duration-200" 
+                        />
+                        <div className={`absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-indigo-500 to-rose-500 transition-all duration-300 ${focusedField === 'email' ? 'w-full' : 'w-0'}`} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className={`transition-colors duration-200 ${focusedField === 'password' ? 'text-indigo-400' : 'text-white/80'}`}>Senha</Label>
+                      <div className="relative group">
+                        <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-200 ${focusedField === 'password' ? 'text-indigo-400' : 'text-white/40'}`} />
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          value={password} 
+                          onChange={(e) => setPassword(e.target.value)} 
+                          onFocus={() => setFocusedField('password')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="••••••••" 
+                          className="pl-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 transition-all duration-200" 
+                        />
+                        <div className={`absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-indigo-500 to-rose-500 transition-all duration-300 ${focusedField === 'password' ? 'w-full' : 'w-0'}`} />
+                      </div>
+                    </div>
+                  </motion.div>
+                  <motion.div custom={2} variants={fadeInVariants} initial="hidden" animate="visible">
+                    <Button 
+                      type="submit" 
+                      disabled={loading} 
+                      className="w-full group relative overflow-hidden border-0"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-rose-600 transition-all duration-300 group-hover:scale-110" />
+                      <div className="relative flex items-center justify-center gap-2">
+                        {loading ? (
+                          <>
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                            />
+                            <span>Entrando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Entrar</span>
+                            <motion.div
+                              whileHover={{ x: 3 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </motion.div>
+                          </>
+                        )}
+                      </div>
+                    </Button>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                      className="mt-6 text-center text-white/60 text-sm"
+                    >
+                      Esqueceu sua senha?{" "}
+                      <Link href="/auth/forgot-password" className="text-indigo-400 relative inline-block group">
+                        Recuperar
+                        <span className="absolute bottom-0 left-0 w-0 h-px bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+                      </Link>
+                    </motion.p>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </form>
-        </div>
+        </motion.div>
+
+        {/* Rodapé */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="text-center mt-6 text-white/40 text-xs"
+        >
+          <p>© {new Date().getFullYear()} ShipGlobal Solutions. Todos os direitos reservados.</p>
+        </motion.div>
       </div>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-[#030303]/80 pointer-events-none" />
     </div>
-  )
+  );
 }
-

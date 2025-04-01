@@ -7,42 +7,34 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
-  experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
-  },
-}
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push({
+        "react-native-sqlite-storage": "commonjs react-native-sqlite-storage",
+        "@sap/hana-client/extension/Stream": "commonjs @sap/hana-client/extension/Stream",
+        "mysql": "commonjs mysql2",
+      });
+      config.module.rules.push({
+        test: /\.js$/,
+        include: /node_modules\/typeorm/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: [["@babel/preset-env", { targets: "defaults" }]],
+            plugins: ["@babel/plugin-transform-modules-commonjs"],
+          },
+        },
+      });
 
-mergeConfig(nextConfig, userConfig)
-
-function mergeConfig(nextConfig, userConfig) {
-  if (!userConfig) {
-    return
-  }
-
-  for (const key in userConfig) {
-    if (
-      typeof nextConfig[key] === 'object' &&
-      !Array.isArray(nextConfig[key])
-    ) {
-      nextConfig[key] = {
-        ...nextConfig[key],
-        ...userConfig[key],
-      }
-    } else {
-      nextConfig[key] = userConfig[key]
+      config.ignoreWarnings = [
+        {
+          module: /typeorm/,
+          message: /Critical dependency: the request of a dependency is an expression/,
+        },
+      ];
     }
-  }
-}
+    return config;
+  },
+};
 
-export default nextConfig
+export default nextConfig;
