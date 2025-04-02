@@ -2,11 +2,46 @@
 
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-
+import {
+  AreaChart as RechartsAreaChart,
+  BarChart as RechartsBarChart,
+  LineChart as RechartsLineChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Area,
+  Bar,
+  Line,
+  Tooltip,
+  Legend,
+} from "recharts"
 import { cn } from "@/lib/utils"
 
-// Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
+
+export const AreaChart = React.forwardRef<
+  React.ElementRef<typeof RechartsAreaChart>,
+  React.ComponentProps<typeof RechartsAreaChart>
+>(({ children, ...props }, ref) => {
+  return <RechartsAreaChart ref={ref} {...props}>{children}</RechartsAreaChart>
+})
+AreaChart.displayName = "AreaChart"
+
+export const BarChart = React.forwardRef<
+  React.ElementRef<typeof RechartsBarChart>,
+  React.ComponentProps<typeof RechartsBarChart>
+>(({ children, ...props }, ref) => {
+  return <RechartsBarChart ref={ref} {...props}>{children}</RechartsBarChart>
+})
+BarChart.displayName = "BarChart"
+
+export const LineChart = React.forwardRef<
+  React.ElementRef<typeof RechartsLineChart>,
+  React.ComponentProps<typeof RechartsLineChart>
+>(({ children, ...props }, ref) => {
+  return <RechartsLineChart ref={ref} {...props}>{children}</RechartsLineChart>
+})
+LineChart.displayName = "LineChart"
 
 export type ChartConfig = {
   [k in string]: {
@@ -26,11 +61,9 @@ const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 function useChart() {
   const context = React.useContext(ChartContext)
-
   if (!context) {
     throw new Error("useChart must be used within a <ChartContainer />")
   }
-
   return context
 }
 
@@ -69,7 +102,7 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
+    ([, config]) => config.theme || config.color
   )
 
   if (!colorConfig.length) {
@@ -90,6 +123,7 @@ ${colorConfig
       itemConfig.color
     return color ? `  --color-${key}: ${color};` : null
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
@@ -100,11 +134,11 @@ ${colorConfig
   )
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip
+const ChartTooltip = Tooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+  React.ComponentProps<typeof Tooltip> &
     React.ComponentProps<"div"> & {
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -139,7 +173,7 @@ const ChartTooltipContent = React.forwardRef<
       }
 
       const [item] = payload
-      const key = `${labelKey || item.dataKey || item.name || "value"}`
+      const key = `${labelKey || item?.dataKey || item?.name || "value"}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
       const value =
         !labelKey && typeof label === "string"
@@ -188,11 +222,11 @@ const ChartTooltipContent = React.forwardRef<
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload.fill || item.color
+            const indicatorColor = color || item.payload?.fill || item.color
 
             return (
               <div
-                key={item.dataKey}
+                key={item.dataKey || index}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center"
@@ -256,7 +290,7 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = "ChartTooltip"
 
-const ChartLegend = RechartsPrimitive.Legend
+const ChartLegend = Legend
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
@@ -306,7 +340,7 @@ const ChartLegendContent = React.forwardRef<
                   }}
                 />
               )}
-              {itemConfig?.label}
+              {itemConfig?.label || item.value}
             </div>
           )
         })}
@@ -316,7 +350,6 @@ const ChartLegendContent = React.forwardRef<
 )
 ChartLegendContent.displayName = "ChartLegend"
 
-// Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
   config: ChartConfig,
   payload: unknown,
@@ -362,4 +395,10 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Area,
+  Bar,
+  Line,
 }

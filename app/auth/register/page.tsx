@@ -582,10 +582,10 @@ export default function RegisterPage() {
       {/* Background gradients and shapes */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(120,80,255,0.15),transparent_70%),radial-gradient(circle_at_25%_60%,rgba(255,100,150,0.1),transparent_50%)]" />
       
-      {/* <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
         <ElegantShape delay={0.3} width={800} height={200} rotate={10} gradient="from-indigo-500/[0.15]" className="left-[-10%] md:left-[-5%] top-[10%] md:top-[15%]" />
         <ElegantShape delay={0.5} width={700} height={180} rotate={-15} gradient="from-rose-500/[0.15]" className="right-[-5%] md:right-[0%] top-[65%] md:top-[70%]" />
-      </div> */}
+      </div>
       
       {/* Content container */}
       <div className="relative z-10 w-full max-w-md px-4 py-8">
