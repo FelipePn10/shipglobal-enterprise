@@ -1,3 +1,5 @@
+"use client";
+
 import type { Metadata } from "next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,11 +12,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
-
-export const metadata: Metadata = {
-  title: "Calendar",
-  description: "View and manage your import schedule and events",
-}
 
 const events = [
   { id: 1, title: "Shipment Arrival - ID #8294", date: "2025-04-03", type: "shipment", status: "confirmed" },

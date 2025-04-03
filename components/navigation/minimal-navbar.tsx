@@ -26,7 +26,7 @@ interface MinimalNavbarProps {
 }
 
 export default function MinimalNavbar({
-  logoText = "Global Reach",
+  logoText = "Ship Global - Enterprise",
   isLoggedIn = false,
   userName = "",
   notifications = 0,
