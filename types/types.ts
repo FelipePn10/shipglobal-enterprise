@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { isCPFValid } from "./data"
+import { isCPFValid } from "../data/data"
 
 // Form schema
 export const importFormSchema = z

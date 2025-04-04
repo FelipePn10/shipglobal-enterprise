@@ -7,7 +7,7 @@ import ImportStatusCard from "@/components/dashboard/import-status-card";
 import { Button } from "@/components/ui/button";
 import { Package, Search, Calendar, Filter, X, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImportButton } from "./components/import-button";
+import { ImportButton } from "../../../components/imports/import-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";

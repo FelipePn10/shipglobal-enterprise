@@ -11,16 +11,17 @@ import { Form } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { type ImportFormValues, importFormSchema } from "./types"
-import { popularCountries, productCategories } from "./data"
-import { PersonalInfoForm } from "./components/personal-info-form"
-import { ShippingAddressForm } from "./components/shipping-addres-form"
-import { ProductInfoForm } from "./components/product-info-form"
-import { PaymentMethodSelector } from "./components/payment-method-selector"
-import { TermsCheckbox } from "./components/terms-checkbox"
-import { PaymentStep } from "./components/payment-step"
-import { PaymentConfirmation } from "./components/payment-confirmator"
-import { SidebarHelpBox, SidebarSteps } from "./components/sidebar-steps"
+import { type ImportFormValues, importFormSchema } from "../../../types/types"
+import { popularCountries, productCategories } from "../../../data/data"
+
+import { SidebarHelpBox, SidebarSteps } from "../../../components/imports/sidebar-steps"
+import { PaymentConfirmation } from "@/components/imports/payment-confirmator"
+import { PaymentMethodSelector } from "@/components/imports/payment-method-selector"
+import { PaymentStep } from "@/components/imports/payment-step"
+import { PersonalInfoForm } from "@/components/imports/personal-info-form"
+import { ProductInfoForm } from "@/components/imports/product-info-form"
+import { ShippingAddressForm } from "@/components/imports/shipping-addres-form"
+import { TermsCheckbox } from "@/components/imports/terms-checkbox"
 
 export function NewImportModal() {
   const [open, setOpen] = useState(false)
