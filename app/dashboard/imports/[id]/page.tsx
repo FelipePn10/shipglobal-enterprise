@@ -1,111 +1,82 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { useParams, useRouter } from "next/navigation"
-import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Package, Calendar, MapPin, Clock, AlertTriangle, CheckCircle, Truck, FileCheck } from "lucide-react"
-import CommunicationLog from "@/components/dashboard/communication-log"
-import DocumentList, { Document } from "@/components/dashboard/document-list" 
-import FinancialSummary from "@/components/dashboard/financial-summary"
+import { cn } from "@/lib/utils";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import {
+  ArrowLeft,
+  Package,
+  Calendar,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Truck,
+  FileCheck,
+} from "lucide-react";
+import CommunicationLog from "@/components/dashboard/communication-log";
+import DocumentList, { Document } from "@/components/dashboard/document-list";
+import FinancialSummary from "@/components/dashboard/financial-summary";
 
 export default function ImportDetailsPage() {
-  const router = useRouter()
-  const params = useParams()
-  const importId = params.id as string
+  const router = useRouter();
+  const params = useParams();
+  const importId = params.id as string;
+  const [importData, setImportData] = useState<any>(null);
 
+  useEffect(() => {
+    fetchImportDetails();
+  }, [importId]);
 
-  const importData = {
-    id: importId,
-    title: "Electronics Shipment",
-    status: "shipping",
-    origin: "Shenzhen, China",
-    destination: "Los Angeles, USA",
-    eta: "Oct 15, 2023",
-    lastUpdated: "2 hours ago",
-    progress: 65,
-    description:
-      "Shipment of electronic components including microchips, circuit boards, and display panels for assembly in the US facility.",
-    timeline: [
-      { date: "Sep 15, 2023", status: "Order Placed", description: "Purchase order submitted to supplier" },
-      { date: "Sep 20, 2023", status: "Processing", description: "Order confirmed and processing started" },
-      { date: "Sep 28, 2023", status: "Ready for Pickup", description: "Goods ready for pickup at supplier facility" },
-      { date: "Oct 2, 2023", status: "In Transit to Port", description: "Shipment en route to port of origin" },
-      { date: "Oct 5, 2023", status: "Customs Clearance (Origin)", description: "Cleared export customs" },
-      { date: "Oct 7, 2023", status: "Departed Port of Origin", description: "Vessel departed from Shenzhen Port" },
-      { date: "Oct 15, 2023", status: "Estimated Arrival", description: "Expected arrival at Los Angeles Port" },
-      { date: "Oct 17, 2023", status: "Pending", description: "Customs clearance at destination" },
-      { date: "Oct 20, 2023", status: "Pending", description: "Delivery to final destination" },
-    ],
-    details: {
-      carrier: "OceanFreight International",
-      trackingNumber: "OFI-78945612",
-      containerNumber: "MSCU7891234",
-      weight: "1,250 kg",
-      dimensions: "Standard 20ft container",
-      incoterms: "FOB Shenzhen",
-      insurance: "Full coverage",
-      specialInstructions: "Handle with care. Temperature-sensitive electronics.",
-    },
-  }
+  const fetchImportDetails = async () => {
+    const response = await fetch(`/api/imports/${importId}`);
+    const data = await response.json();
+    if (data) {
+      setImportData({
+        id: data.importId,
+        title: data.title,
+        status: data.status,
+        origin: data.origin,
+        destination: data.destination,
+        eta: data.eta,
+        lastUpdated: new Date(data.lastUpdated).toLocaleString(),
+        progress: data.progress,
+        description: "Details fetched from database.",
+        timeline: [
+          { date: "Sep 15, 2023", status: "Order Placed", description: "Purchase order submitted to supplier" },
+        ],
+        details: {
+          carrier: "OceanFreight International",
+          trackingNumber: "OFI-78945612",
+          containerNumber: "MSCU7891234",
+          weight: "1,250 kg",
+          dimensions: "Standard 20ft container",
+          incoterms: "FOB Shenzhen",
+          insurance: "Full coverage",
+          specialInstructions: "Handle with care.",
+        },
+      });
+    }
+  };
 
   const communicationData = [
     {
       id: "msg-001",
-      sender: {
-        name: "Sarah Johnson",
-        role: "Customs Agent",
-      },
-      content:
-        "We need additional documentation for the electronics shipment. Please provide the certificate of origin by tomorrow.",
+      sender: { name: "Sarah Johnson", role: "Customs Agent" },
+      content: "We need additional documentation.",
       timestamp: "Today, 2:30 PM",
-      attachments: [
-        {
-          name: "Required_Documents_List.pdf",
-          type: "PDF",
-          size: "245 KB",
-          url: "#",
-        },
-      ],
+      attachments: [{ name: "Required_Documents_List.pdf", type: "PDF", size: "245 KB", url: "#" }],
     },
-    {
-      id: "msg-002",
-      sender: {
-        name: "Michael Chen",
-        role: "Logistics Manager",
-      },
-      content:
-        "The shipment has cleared export customs and is now en route to the port. Everything is on schedule so far.",
-      timestamp: "Oct 5, 2023, 11:15 AM",
-    },
-    {
-      id: "msg-003",
-      sender: {
-        name: "John Smith",
-        role: "You",
-      },
-      content:
-        "Thanks for the update. Please keep me informed of any changes to the ETA. Are there any potential delays we should be aware of?",
-      timestamp: "Oct 5, 2023, 1:45 PM",
-    },
-    {
-      id: "msg-004",
-      sender: {
-        name: "Michael Chen",
-        role: "Logistics Manager",
-      },
-      content:
-        "There's some congestion at the port of Los Angeles, but we've accounted for that in the ETA. We'll monitor the situation and update you if anything changes.",
-      timestamp: "Oct 5, 2023, 3:30 PM",
-    },
-  ]
+  ];
 
   const documentsData: Document[] = [
     {
       id: "doc-001",
-      name: "Electronics_Commercial_Invoice.pdf",
+      name: "Commercial_Invoice.pdf",
       type: "PDF",
       size: "1.2 MB",
       uploadedBy: "John Smith",
@@ -113,47 +84,7 @@ export default function ImportDetailsPage() {
       status: "approved",
       category: "Invoices",
     },
-    {
-      id: "doc-002",
-      name: "Bill_of_Lading.pdf",
-      type: "PDF",
-      size: "0.8 MB",
-      uploadedBy: "Michael Chen",
-      uploadDate: "Oct 2, 2023",
-      status: "approved",
-      category: "Shipping",
-    },
-    {
-      id: "doc-003",
-      name: "Certificate_of_Origin.pdf",
-      type: "PDF",
-      size: "1.5 MB",
-      uploadedBy: "Sarah Johnson",
-      uploadDate: "Oct 3, 2023",
-      status: "pending",
-      category: "Certificates",
-    },
-    {
-      id: "doc-004",
-      name: "Packing_List.xlsx",
-      type: "XLS",
-      size: "2.3 MB",
-      uploadedBy: "John Smith",
-      uploadDate: "Sep 28, 2023",
-      status: "approved",
-      category: "Packing",
-    },
-    {
-      id: "doc-005",
-      name: "Insurance_Certificate.pdf",
-      type: "PDF",
-      size: "1.1 MB",
-      uploadedBy: "Emma Davis",
-      uploadDate: "Sep 30, 2023",
-      status: "approved",
-      category: "Insurance",
-    },
-  ]
+  ];
 
   const financialData = {
     items: [
@@ -163,82 +94,52 @@ export default function ImportDetailsPage() {
         amount: 45000,
         date: "Sep 15, 2023",
         status: "paid" as const,
-        type: "payment" as const,
-      },
-      {
-        id: "fin-002",
-        description: "Shipping Cost",
-        amount: 8500,
-        date: "Oct 2, 2023",
-        status: "paid" as const,
-        type: "fee" as const,
-      },
-      {
-        id: "fin-003",
-        description: "Insurance Premium",
-        amount: 2250,
-        date: "Sep 30, 2023",
-        status: "paid" as const,
-        type: "fee" as const,
-      },
-      {
-        id: "fin-004",
-        description: "Customs Clearance Fee",
-        amount: 1750,
-        date: "Oct 17, 2023",
-        status: "pending" as const,
-        type: "fee" as const,
-      },
-      {
-        id: "fin-005",
-        description: "Destination Handling",
-        amount: 950,
-        date: "Oct 20, 2023",
-        status: "pending" as const,
-        type: "fee" as const,
+        type: "payment" as const, // Explicitly typed to match FinancialItem
       },
     ],
-    totalPaid: 55750,
-    totalPending: 2700,
-  }
+    totalPaid: 45000,
+    totalPending: 0,
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "shipping":
-        return "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
+        return "bg-indigo-500/20 text-indigo-300 border-indigo-500/30";
       case "customs":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30"
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       case "delivered":
-        return "bg-green-500/20 text-green-300 border-green-500/30"
+        return "bg-green-500/20 text-green-300 border-green-500/30";
       case "issue":
-        return "bg-red-500/20 text-red-300 border-red-500/30"
+        return "bg-red-500/20 text-red-300 border-red-500/30";
       default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30"
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "order placed":
-        return <FileCheck className="h-5 w-5 text-white/80" />
+        return <FileCheck className="h-5 w-5 text-white/80" />;
       case "processing":
-        return <Package className="h-5 w-5 text-white/80" />
+        return <Package className="h-5 w-5 text-white/80" />;
       case "ready for pickup":
-        return <CheckCircle className="h-5 w-5 text-white/80" />
+        return <CheckCircle className="h-5 w-5 text-white/80" />;
       case "in transit to port":
-        return <Truck className="h-5 w-5 text-white/80" />
+        return <Truck className="h-5 w-5 text-white/80" />;
       case "customs clearance (origin)":
-        return <FileCheck className="h-5 w-5 text-white/80" />
+        return <FileCheck className="h-5 w-5 text-white/80" />;
       case "departed port of origin":
-        return <Truck className="h-5 w-5 text-white/80" />
+        return <Truck className="h-5 w-5 text-white/80" />;
       case "estimated arrival":
-        return <Clock className="h-5 w-5 text-white/80" />
+        return <Clock className="h-5 w-5 text-white/80" />;
       case "pending":
-        return <Clock className="h-5 w-5 text-white/60" />
+        return <Clock className="h-5 w-5 text-white/60" />;
       default:
-        return <Package className="h-5 w-5 text-white/80" />
+        return <Package className="h-5 w-5 text-white/80" />;
     }
-  }
+  };
+
+  if (!importData) return <div>Loading...</div>;
 
   return (
     <DashboardLayout>
@@ -317,7 +218,7 @@ export default function ImportDetailsPage() {
           </div>
 
           <div className="space-y-4">
-            {importData.timeline.map((event, index) => (
+            {importData.timeline.map((event: any, index: number) => (
               <div key={index} className="flex gap-4">
                 <div
                   className={cn(
@@ -390,7 +291,6 @@ export default function ImportDetailsPage() {
         <TabsContent value="details" className="space-y-6 mt-6">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
             <h3 className="text-lg font-medium text-white mb-4">Shipment Details</h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="space-y-4">
@@ -455,5 +355,5 @@ export default function ImportDetailsPage() {
         </TabsContent>
       </Tabs>
     </DashboardLayout>
-  )
+  );
 }

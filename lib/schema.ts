@@ -25,12 +25,12 @@ export const companies = mysqlTable("companies", {
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").references(() => companies.id).notNull(), // Relaciona com a empresa
+  companyId: int("company_id").references(() => companies.id).notNull(),
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
-  role: varchar("role", { length: 50 }).notNull(), // "admin" ou "purchase_manager"
+  role: varchar("role", { length: 50 }).notNull(), // "admin" or "purchase_manager"
   createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -41,4 +41,18 @@ export const messages = mysqlTable("messages", {
   content: text("content").notNull(),
   createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
   isRead: boolean("is_read").default(false).notNull(),
+});
+
+export const imports = mysqlTable("imports", {
+  id: int("id").primaryKey().autoincrement(),
+  importId: varchar("import_id", { length: 50 }).notNull().unique(), // e.g., "IMP-2023-0042"
+  companyId: int("company_id").references(() => companies.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull(), // "pending", "processing", "customs", "shipping", "delivered", "issue"
+  origin: varchar("origin", { length: 255 }).notNull(),
+  destination: varchar("destination", { length: 255 }).notNull(),
+  eta: varchar("eta", { length: 50 }).notNull(),
+  lastUpdated: datetime("last_updated").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  progress: int("progress").notNull(),
+  createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

@@ -1,3 +1,4 @@
+// components/dashboard/financial-summary.tsx
 "use client"
 
 import { useState } from "react"
@@ -7,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
+import { generateAndSaveFinancialSummaryPDF } from "@/lib/pdf-export"
+import { toast } from "@/components/ui/use-toast" // Assuming you have toast component
 
 interface FinancialItem {
   id: string
@@ -22,10 +25,20 @@ interface FinancialSummaryProps {
   totalPaid: number
   totalPending: number
   className?: string
+  companyName?: string
+  companyLogo?: string
 }
 
-export default function FinancialSummary({ items, totalPaid, totalPending, className }: FinancialSummaryProps) {
+export default function FinancialSummary({ 
+  items, 
+  totalPaid, 
+  totalPending, 
+  className,
+  companyName = "Ship Global",
+  companyLogo
+}: FinancialSummaryProps) {
   const [timeframe, setTimeframe] = useState("month")
+  const [isExporting, setIsExporting] = useState(false)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -50,6 +63,71 @@ export default function FinancialSummary({ items, totalPaid, totalPending, class
         return <TrendingDown className="h-4 w-4 text-red-400" />
       default:
         return null
+    }
+  }
+
+  const getTimeframeLabel = () => {
+    switch (timeframe) {
+      case "week":
+        return "Week"
+      case "month":
+        return "Month"
+      case "quarter":
+        return "Quarter"
+      case "year":
+        return "Year"
+      default:
+        return "Period"
+    }
+  }
+
+  const handleExportPDF = () => {
+    setIsExporting(true)
+    
+    try {
+      // Calculate total overdue for the PDF
+      const totalOverdue = items
+        .filter(item => item.status === "overdue")
+        .reduce((sum, item) => sum + item.amount, 0)
+      
+      // Get the accent colors from the UI
+      const primaryColor = "#4f46e5" // indigo-500
+      const secondaryColor = "#f9fafb" // gray-50
+      
+      // Export options based on current UI state
+      const exportOptions = {
+        companyName: companyName,
+        companyLogo: companyLogo,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
+        includeCharts: true,
+        includeFooter: true,
+        orientation: "portrait" as const
+      }
+      
+      // Use the enhanced PDF export function
+      generateAndSaveFinancialSummaryPDF(
+        items,
+        totalPaid,
+        totalPending,
+        getTimeframeLabel(),
+        exportOptions
+      )
+      
+      toast?.({
+        title: "Export Successful",
+        description: `Financial summary for this ${getTimeframeLabel().toLowerCase()} has been downloaded.`,
+        variant: "default",
+      })
+    } catch (error) {
+      console.error("PDF export failed:", error)
+      toast?.({
+        title: "Export Failed",
+        description: "There was an error generating your financial report. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -152,9 +230,24 @@ export default function FinancialSummary({ items, totalPaid, totalPending, class
       </div>
 
       <div className="p-4 border-t border-white/10 flex justify-between items-center">
-        <Button variant="ghost" size="sm" className="text-white/70 hover:text-white">
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white/70 hover:text-white"
+          onClick={handleExportPDF}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <>
+              <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
+              Exporting...
+            </>  
+          ) : (
+            <>
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </>
+          )}
         </Button>
         <Link href="/dashboard/finances">
           <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
@@ -165,4 +258,3 @@ export default function FinancialSummary({ items, totalPaid, totalPending, class
     </div>
   )
 }
-

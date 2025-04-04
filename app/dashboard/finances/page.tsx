@@ -1,3 +1,4 @@
+// app/dashboard/finances/page.tsx
 "use client"
 
 import { useState } from "react"
@@ -18,8 +19,8 @@ import {
   ArrowDownRight,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { exportFinancialSummaryPDF } from "@/lib/pdf-export"
 
-// Define the interface for financial items
 interface FinancialItem {
   id: string
   description: string
@@ -32,7 +33,6 @@ interface FinancialItem {
 export default function FinancesPage() {
   const [timeframe, setTimeframe] = useState("month")
 
-  // Mock data for financial items with explicit typing
   const financialData: { items: FinancialItem[]; totalPaid: number; totalPending: number } = {
     items: [
       {
@@ -120,13 +120,11 @@ export default function FinancesPage() {
     totalPending: 15700,
   }
 
-  // Filter items by type
   const invoices = financialData.items.filter((item) => item.type === "invoice")
   const payments = financialData.items.filter((item) => item.type === "payment")
   const fees = financialData.items.filter((item) => item.type === "fee")
   const pending = financialData.items.filter((item) => item.status === "pending")
 
-  // Analytics data
   const analyticsData = [
     { name: "Jan", imports: 12, revenue: 18000 },
     { name: "Feb", imports: 15, revenue: 22500 },
@@ -142,7 +140,6 @@ export default function FinancesPage() {
     { name: "Dec", imports: 0, revenue: 0 },
   ]
 
-  // Financial summary cards data
   const summaryCards = [
     {
       title: "Total Revenue",
@@ -173,6 +170,10 @@ export default function FinancesPage() {
       icon: <ArrowDownRight className="h-5 w-5 text-white/80" />,
     },
   ]
+
+  const handleExportAllPDF = () => {
+    exportFinancialSummaryPDF(financialData.items, financialData.totalPaid, financialData.totalPending, timeframe)
+  }
 
   return (
     <DashboardLayout>
@@ -263,7 +264,10 @@ export default function FinancesPage() {
               <DollarSign className="h-6 w-6 mb-2" />
               <span>Record Payment</span>
             </Button>
-            <Button className="flex flex-col items-center justify-center h-24 bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 hover:bg-amber-500/20 text-white">
+            <Button
+              className="flex flex-col items-center justify-center h-24 bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 hover:bg-amber-500/20 text-white"
+              onClick={handleExportAllPDF}
+            >
               <Download className="h-6 w-6 mb-2" />
               <span>Export Report</span>
             </Button>

@@ -50,6 +50,7 @@
     "framer-motion": "latest",
     "input-otp": "1.4.1",
     "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.454.0",
     "mysql2": "^3.14.0",
     "next": "15.2.4",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/jspdf": "^2.0.0",
     "@types/node": "^22",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19",

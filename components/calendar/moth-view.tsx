@@ -1,26 +1,45 @@
 "use client"
+
 import { format, isSameMonth, isSameDay, parseISO, isValid } from "date-fns"
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar, CalendarProps } from "@/components/ui/calendar"
 import { EventCard } from "./event-card"
 import { cn } from "@/lib/utils"
 
+// Define event interface
+interface CalendarEvent {
+  id: number
+  title: string
+  description?: string
+  date: string
+  startTime: string
+  endTime: string
+  type: string
+  status: string
+  location?: string
+  attendees?: string[]
+  color?: string
+}
+
+// Define event type interface
+interface EventType {
+  value: string
+  label: string
+  color: string
+}
+
+// Define props for MonthView
 interface MonthViewProps {
   selectedDate: Date
   onDateSelect: (date: Date | undefined) => void
-  events: Array<{
-    id: number
-    title: string
-    description?: string
-    date: string
-    startTime: string
-    endTime: string
-    type: string
-    status: string
-    location?: string
-    attendees?: string[]
-    color?: string
-  }>
-  eventTypes: Array<{ value: string; label: string; color: string }>
+  events: CalendarEvent[]
+  eventTypes: EventType[]
+}
+
+// Define props for the Day component
+interface DayProps {
+  date: Date
+  disabled?: boolean
+  active?: boolean
 }
 
 export function MonthView({ selectedDate, onDateSelect, events, eventTypes }: MonthViewProps) {
@@ -38,59 +57,68 @@ export function MonthView({ selectedDate, onDateSelect, events, eventTypes }: Mo
     }
   })
 
-  // Custom day render for the calendar to show event indicators
-  const renderDay = (day: Date | undefined) => {
-    // Ensure day is valid
-    if (!day || !isValid(day)) {
-      return <div className="h-9 w-9 p-0 font-normal">-</div>
-    }
-
+  // Custom day render function
+  const renderDay = (date: Date) => {
     // Get events for this day
     const dayEvents = events.filter((event) => {
       try {
-        // Parse the event date string to a Date object
         const eventDate = parseISO(event.date)
-        // Use isSameDay for safer date comparison
-        return isValid(eventDate) && isSameDay(eventDate, day)
+        return isValid(eventDate) && isSameDay(eventDate, date)
       } catch (error) {
-        // Handle invalid date strings
         console.error("Invalid date:", event.date)
         return false
       }
     })
 
-    // Check if this day is today
-    const isToday = isSameDay(day, new Date())
-
-    // Check if this day is in the current month
-    const isCurrentMonth = isSameMonth(day, validSelectedDate)
+    const isToday = isSameDay(date, new Date())
+    const isCurrentMonth = isSameMonth(date, validSelectedDate)
 
     return (
       <div className="relative w-full h-full">
         <div
           className={cn(
-            "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-            isToday ? "bg-primary text-primary-foreground rounded-full" : "",
-            !isCurrentMonth ? "text-muted-foreground opacity-50" : "",
+            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 flex items-center justify-center",
+            isToday && "bg-primary text-primary-foreground rounded-full",
+            !isCurrentMonth && "text-muted-foreground opacity-50"
           )}
         >
-          {format(day, "d")}
+          {format(date, "d")}
         </div>
         {dayEvents.length > 0 && (
           <div className="absolute bottom-1 left-0 right-0 flex justify-center">
             <div className="flex gap-0.5">
               {dayEvents.slice(0, 3).map((event, i) => {
                 const eventType = eventTypes.find((t) => t.value === event.type)
-                const color = event.color || (eventType ? eventType.color : "#4f46e5")
-                return <div key={i} className="h-1 w-1 rounded-full" style={{ backgroundColor: color }} />
+                const color = event.color || eventType?.color || "#4f46e5"
+                return (
+                  <div
+                    key={i}
+                    className="h-1 w-1 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                )
               })}
-              {dayEvents.length > 3 && <div className="h-1 w-1 rounded-full bg-gray-400" />}
+              {dayEvents.length > 3 && (
+                <div className="h-1 w-1 rounded-full bg-gray-400" />
+              )}
             </div>
           </div>
         )}
       </div>
     )
   }
+
+  // Custom Day component
+  const DayComponent = ({ date, ...props }: DayProps) => (
+    <button
+      {...props}
+      onClick={() => onDateSelect(date)}
+      disabled={props.disabled}
+      className={cn(props.disabled && "opacity-50 cursor-not-allowed")}
+    >
+      {renderDay(date)}
+    </button>
+  )
 
   return (
     <div className="space-y-4">
@@ -101,17 +129,15 @@ export function MonthView({ selectedDate, onDateSelect, events, eventTypes }: Mo
           onSelect={onDateSelect}
           className="rounded-md"
           components={{
-            Day: ({ day, ...props }) => (
-              <button {...props} onClick={() => (day && isValid(day) ? onDateSelect(day) : null)}>
-                {renderDay(day)}
-              </button>
-            ),
+            Day: DayComponent,
           }}
           initialFocus
         />
       </div>
       <div className="space-y-2">
-        <h3 className="text-sm font-medium">Events for {format(validSelectedDate, "MMMM d, yyyy")}</h3>
+        <h3 className="text-sm font-medium">
+          Events for {format(validSelectedDate, "MMMM d, yyyy")}
+        </h3>
         <div className="border rounded-lg divide-y">
           {eventsForSelectedDate.length > 0 ? (
             eventsForSelectedDate.map((event) => (
@@ -129,4 +155,3 @@ export function MonthView({ selectedDate, onDateSelect, events, eventTypes }: Mo
     </div>
   )
 }
-
