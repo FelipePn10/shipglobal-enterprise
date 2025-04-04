@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
 import ImportStatusCard from "@/components/dashboard/import-status-card"
 import { Button } from "@/components/ui/button"
-import { Package, Search, Plus, Calendar } from "lucide-react"
+import { Package, Search, Calendar } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ImportButton } from "./import-button"
 
 export default function ImportsPage() {
   const router = useRouter()
@@ -135,10 +136,7 @@ export default function ImportsPage() {
               <Calendar className="h-4 w-4 mr-2" />
               Oct 10, 2023
             </Button>
-            <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              New Import
-            </Button>
+            <ImportButton />
           </div>
         </div>
       </div>
@@ -211,15 +209,9 @@ export default function ImportsPage() {
               ? "Try adjusting your search or filters to find what you're looking for."
               : "You don't have any imports yet. Create your first import to get started."}
           </p>
-          {!searchQuery && statusFilter === "all" && (
-            <Button className="mt-6 bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Import
-            </Button>
-          )}
+          {!searchQuery && statusFilter === "all" && <ImportButton />}
         </div>
       )}
     </DashboardLayout>
   )
 }
-
