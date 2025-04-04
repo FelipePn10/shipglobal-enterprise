@@ -12,6 +12,7 @@ import AnalyticsChart from "@/components/dashboard/analytics-chart"
 import { Package, MessageSquare, DollarSign, FileText, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from "next/link"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -282,10 +283,12 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 mr-2" />
               Oct 10, 2023
             </Button>
+            <Link href="/dashboard/imports">
             <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
               <Package className="h-4 w-4 mr-2" />
               New Import
             </Button>
+            </Link>
           </div>
         </div>
       </div>

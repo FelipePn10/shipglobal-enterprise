@@ -6,6 +6,7 @@ import { DollarSign, TrendingUp, TrendingDown, Download, Filter, MoreHorizontal 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Link from "next/link"
 
 interface FinancialItem {
   id: string
@@ -155,9 +156,11 @@ export default function FinancialSummary({ items, totalPaid, totalPending, class
           <Download className="h-4 w-4 mr-2" />
           Export Report
         </Button>
-        <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
-          View All Transactions
-        </Button>
+        <Link href="/dashboard/finances">
+          <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
+            View All Transactions
+          </Button>
+        </Link>
       </div>
     </div>
   )

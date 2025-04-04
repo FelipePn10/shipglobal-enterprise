@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Download, Eye, FileText, FileImage, FileSpreadsheet, FileCode } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 
 export interface Document {
   id: string
@@ -59,9 +60,11 @@ export default function DocumentList({ documents, className }: DocumentListProps
     <div className={cn("bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg", className)}>
       <div className="p-4 border-b border-white/10 flex justify-between items-center">
         <h3 className="text-lg font-medium text-white">Documents</h3>
+      <Link href="/dashboard/documents">
         <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white text-xs">
           Upload Document
         </Button>
+      </Link>
       </div>
 
       <div className="overflow-x-auto">
