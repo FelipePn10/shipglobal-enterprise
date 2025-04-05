@@ -10,13 +10,14 @@ RUN npm config set registry https://registry.npmjs.org
 
 COPY package.json pnpm-lock.yaml ./
 
-# Instala as dependências
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
 RUN pnpm build
 
+RUN pnpm build
+
 EXPOSE 3000
 
-CMD ["pnpm", "start"]
+CMD ["pnpm", "build", "&&", "pnpm", "start"]
