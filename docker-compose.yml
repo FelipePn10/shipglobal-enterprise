@@ -5,14 +5,14 @@ services:
       MYSQL_ROOT_PASSWORD: admin
       MYSQL_DATABASE: companydb
     ports:
-      - "3306:3306"
+      - "3310:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - hero-mysql-data:/var/lib/mysql
     networks:
       - app-network
 
   backend:
-    image: backend-image # Buildado separadamente
+    image: backend-image  # <- Imagem buildada separadamente
     ports:
       - "8081:8081"
     depends_on:
@@ -23,7 +23,7 @@ services:
   frontend:
     build: .
     ports:
-      - "3000:3000"
+      - "3000:3000"  # frontend principal
     depends_on:
       - backend
     networks:
@@ -34,4 +34,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql-data:
+  hero-mysql-data:

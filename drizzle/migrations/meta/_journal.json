@@ -15,6 +15,13 @@
       "when": 1743524283124,
       "tag": "0001_ambitious_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1744035509619,
+      "tag": "0002_volatile_invisible_woman",
+      "breakpoints": true
     }
   ]
 }

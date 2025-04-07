@@ -5,35 +5,30 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import ImportStatusCard from "@/components/dashboard/import-status-card";
 import { Button } from "@/components/ui/button";
-import { Package, Search, Calendar, Filter, X, Loader2 } from "lucide-react";
+import { Package, Search, Calendar, Filter, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportButton } from "../../../components/imports/import-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 
-// Define custom hook for debounce
+// Hook de debounce personalizado
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
   }, [value, delay]);
 
   return debouncedValue;
 };
 
-// Define types for the import data
+// Tipos para os dados de importação
 interface ImportItem {
   id: string;
   title: string;
-  status: 'pending' | 'processing' | 'customs' | 'shipping' | 'delivered' | 'issue';
+  status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue";
   origin: string;
   destination: string;
   eta: string;
@@ -42,29 +37,41 @@ interface ImportItem {
   createdAt: string;
 }
 
-// Define the status colors mapping
-const statusColors: Record<ImportItem['status'], string> = {
+// Mapeamento de cores por status
+const statusColors: Record<ImportItem["status"], string> = {
   pending: "bg-yellow-500/20 text-yellow-400",
   processing: "bg-blue-500/20 text-blue-400",
   customs: "bg-purple-500/20 text-purple-400",
   shipping: "bg-indigo-500/20 text-indigo-400",
   delivered: "bg-green-500/20 text-green-400",
-  issue: "bg-red-500/20 text-red-400"
+  issue: "bg-red-500/20 text-red-400",
 };
 
-// Update the ImportStatusCard component props
-interface ImportStatusCardProps {
-  id: string;
-  title: string;
-  status: ImportItem['status'];
-  origin: string;
-  destination: string;
-  eta: string;
-  lastUpdated: string;
-  progress: number;
-  onClick: () => void;
-  className?: string;
-}
+// Dados mockados para teste (substituir pela API real quando disponível)
+const mockImports: ImportItem[] = [
+  {
+    id: "IMP-001",
+    title: "Electronics Shipment",
+    status: "shipping",
+    origin: "Shenzhen, CN",
+    destination: "Los Angeles, US",
+    eta: "2025-04-15",
+    lastUpdated: new Date().toLocaleString(),
+    progress: 75,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "IMP-002",
+    title: "Clothing Batch",
+    status: "pending",
+    origin: "Dhaka, BD",
+    destination: "New York, US",
+    eta: "TBD",
+    lastUpdated: new Date().toLocaleString(),
+    progress: 10,
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 export default function ImportsPage() {
   const router = useRouter();
@@ -75,136 +82,141 @@ export default function ImportsPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  
-  // Debounce search to prevent excessive API calls
+
   const debouncedSearch = useDebounce<string>(searchQuery, 300);
 
+  // Função para buscar importações
   const fetchImports = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch("/api/imports");
-      if (!response.ok) throw new Error("Failed to fetch imports");
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch imports: ${response.status} - ${errorText}`);
+      }
+
       const data = await response.json();
-      setImportData(
-        data.map((item: any): ImportItem => ({
-          id: item.importId,
-          title: item.title,
-          status: item.status as ImportItem['status'],
-          origin: item.origin,
-          destination: item.destination,
-          eta: item.eta,
-          lastUpdated: new Date(item.lastUpdated).toLocaleString(),
-          progress: item.progress,
-          createdAt: item.createdAt || new Date().toISOString(),
-        }))
-      );
+      const formattedData: ImportItem[] = data.map((item: any) => ({
+        id: item.importId,
+        title: item.title,
+        status: item.status as ImportItem["status"],
+        origin: item.origin,
+        destination: item.destination,
+        eta: item.eta,
+        lastUpdated: new Date(item.lastUpdated).toLocaleString(),
+        progress: item.progress,
+        createdAt: item.createdAt || new Date().toISOString(),
+      }));
+      setImportData(formattedData);
     } catch (error) {
       console.error("Error fetching imports:", error);
+      // Usar dados mockados como fallback até a API estar funcionando
+      setImportData(mockImports);
       toast({
         title: "Error fetching imports",
-        description: "Please try again later",
-        variant: "destructive"
+        description: "Using mock data. Please check the API status.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Efeito para carregar os dados iniciais e configurar polling
   useEffect(() => {
     fetchImports();
-    
-    // Set up polling for real-time updates
-    const pollingInterval = setInterval(fetchImports, 60000); // Every minute
-    
+    const pollingInterval = setInterval(fetchImports, 60000); // Atualiza a cada 1 minuto
     return () => clearInterval(pollingInterval);
   }, [fetchImports]);
 
+  // Filtragem dos dados
   const filteredImports = useMemo(() => {
     return importData.filter((item) => {
-      // Filter by search query
       const matchesSearch =
         item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.origin.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.destination.toLowerCase().includes(debouncedSearch.toLowerCase());
-      
-      // Filter by status
+
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-      
-      // Filter by date
+
       let matchesDate = true;
       const itemDate = new Date(item.createdAt);
       const now = new Date();
-      
       if (dateFilter === "today") {
         matchesDate = itemDate.toDateString() === now.toDateString();
       } else if (dateFilter === "week") {
-        const weekAgo = new Date();
-        weekAgo.setDate(now.getDate() - 7);
+        const weekAgo = new Date(now.setDate(now.getDate() - 7));
         matchesDate = itemDate >= weekAgo;
       } else if (dateFilter === "month") {
-        const monthAgo = new Date();
-        monthAgo.setMonth(now.getMonth() - 1);
+        const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
         matchesDate = itemDate >= monthAgo;
       }
-      
+
       return matchesSearch && matchesStatus && matchesDate;
     });
   }, [importData, debouncedSearch, statusFilter, dateFilter]);
 
-  const handleImportClick = useCallback((id: string): void => {
-    router.push(`/dashboard/imports/${id}`);
-  }, [router]);
+  // Função para navegar para detalhes de uma importação
+  const handleImportClick = useCallback(
+    (id: string) => router.push(`/dashboard/imports/${id}`),
+    [router]
+  );
 
-  const handleNewImport = async (): Promise<void> => {
+  // Função para criar uma nova importação
+  const handleNewImport = useCallback(async () => {
     setIsCreating(true);
+    const newImport: ImportItem = {
+      id: `IMP-${Date.now()}`,
+      title: "New Import",
+      status: "pending",
+      origin: "Unknown",
+      destination: "Unknown",
+      eta: "TBD",
+      progress: 0,
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toLocaleString(),
+    };
+
     try {
-      const newImport = {
-        importId: `IMP-${Date.now()}`,
-        companyId: 1, // Replace with actual company ID
-        title: "New Import",
-        status: "pending" as const,
-        origin: "Unknown",
-        destination: "Unknown",
-        eta: "TBD",
-        progress: 0,
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-      };
-      
       const response = await fetch("/api/imports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newImport),
       });
-      
-      if (!response.ok) throw new Error("Failed to create import");
-      
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create import: ${response.status} - ${errorText}`);
+      }
+
       toast({
         title: "Import created",
         description: "Your new import has been created successfully",
       });
-      
       await fetchImports();
-      router.push(`/dashboard/imports/${newImport.importId}`);
+      router.push(`/dashboard/imports/${newImport.id}`);
     } catch (error) {
       console.error("Error creating import:", error);
+      // Adicionar ao estado local como fallback
+      setImportData((prev) => [...prev, newImport]);
       toast({
         title: "Error creating import",
-        description: "Please try again later",
-        variant: "destructive"
+        description: "Saved locally. Please check the API status.",
+        variant: "destructive",
       });
+      router.push(`/dashboard/imports/${newImport.id}`);
     } finally {
       setIsCreating(false);
     }
-  };
+  }, [fetchImports, router]);
 
-  const clearFilters = (): void => {
+  // Limpar filtros
+  const clearFilters = useCallback(() => {
     setSearchQuery("");
     setStatusFilter("all");
     setDateFilter("all");
-  };
+  }, []);
 
   const hasActiveFilters = searchQuery || statusFilter !== "all" || dateFilter !== "all";
 
@@ -217,16 +229,9 @@ export default function ImportsPage() {
             <p className="text-white/60 mt-1">Manage and track all your import shipments</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              className="border-white/10 text-white/80 hover:bg-white/5 hover:text-white transition"
-            >
+            <Button variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">
               <Calendar className="h-4 w-4 mr-2" />
-              {new Date().toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}
+              {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
             </Button>
             <ImportButton onImport={handleNewImport} isLoading={isCreating} />
           </div>
@@ -234,7 +239,7 @@ export default function ImportsPage() {
       </div>
 
       <div className="mb-6">
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10 mb-6">
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
@@ -246,7 +251,7 @@ export default function ImportsPage() {
                 className="w-full bg-white/5 border border-white/10 rounded-md pl-9 pr-3 py-2 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
               />
               {searchQuery && (
-                <button 
+                <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white"
                 >
@@ -254,9 +259,8 @@ export default function ImportsPage() {
                 </button>
               )}
             </div>
-            
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               className="border-white/10 text-white/80 hover:bg-white/5"
               onClick={() => setShowFilters(!showFilters)}
@@ -280,31 +284,16 @@ export default function ImportsPage() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent className="bg-white/10 backdrop-blur-lg border-white/10">
-                    <SelectItem value="all" className="text-white/80 hover:text-white focus:text-white">
-                      All Statuses
-                    </SelectItem>
-                    <SelectItem value="pending" className="text-white/80 hover:text-white focus:text-white">
-                      Pending
-                    </SelectItem>
-                    <SelectItem value="processing" className="text-white/80 hover:text-white focus:text-white">
-                      Processing
-                    </SelectItem>
-                    <SelectItem value="customs" className="text-white/80 hover:text-white focus:text-white">
-                      In Customs
-                    </SelectItem>
-                    <SelectItem value="shipping" className="text-white/80 hover:text-white focus:text-white">
-                      Shipping
-                    </SelectItem>
-                    <SelectItem value="delivered" className="text-white/80 hover:text-white focus:text-white">
-                      Delivered
-                    </SelectItem>
-                    <SelectItem value="issue" className="text-white/80 hover:text-white focus:text-white">
-                      Issues
-                    </SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="customs">In Customs</SelectItem>
+                    <SelectItem value="shipping">Shipping</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="issue">Issues</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
               <div>
                 <label className="text-white/60 text-sm block mb-2">Date Range</label>
                 <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -312,26 +301,17 @@ export default function ImportsPage() {
                     <SelectValue placeholder="Filter by date" />
                   </SelectTrigger>
                   <SelectContent className="bg-white/10 backdrop-blur-lg border-white/10">
-                    <SelectItem value="all" className="text-white/80 hover:text-white focus:text-white">
-                      All Time
-                    </SelectItem>
-                    <SelectItem value="today" className="text-white/80 hover:text-white focus:text-white">
-                      Today
-                    </SelectItem>
-                    <SelectItem value="week" className="text-white/80 hover:text-white focus:text-white">
-                      Last 7 Days
-                    </SelectItem>
-                    <SelectItem value="month" className="text-white/80 hover:text-white focus:text-white">
-                      Last 30 Days
-                    </SelectItem>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">Last 7 Days</SelectItem>
+                    <SelectItem value="month">Last 30 Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="flex items-end">
-                <Button 
-                  variant="outline" 
-                  className="border-white/10 text-white/80 hover:bg-white/5 w-full"
+                <Button
+                  variant="outline"
+                  className="w-full border-white/10 text-white/80 hover:bg-white/5"
                   onClick={clearFilters}
                   disabled={!hasActiveFilters}
                 >
@@ -346,68 +326,43 @@ export default function ImportsPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white/5 rounded-lg p-5 border border-white/10 h-64">
-              <div className="flex justify-between items-start mb-4">
-                <Skeleton className="h-6 w-32 bg-white/10" />
-                <Skeleton className="h-5 w-24 bg-white/10" />
-              </div>
-              <Skeleton className="h-5 w-full bg-white/10 mb-4" />
-              <Skeleton className="h-4 w-3/4 bg-white/10 mb-2" />
-              <Skeleton className="h-4 w-2/4 bg-white/10 mb-6" />
-              <Skeleton className="h-2 w-full bg-white/10 mb-6" />
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-1/4 bg-white/10" />
-                <Skeleton className="h-4 w-1/4 bg-white/10" />
-              </div>
-            </div>
+            <Skeleton key={i} className="bg-white/5 rounded-lg p-5 border border-white/10 h-64" />
           ))}
         </div>
       ) : filteredImports.length > 0 ? (
         <>
           <div className="flex justify-between items-center mb-4">
             <div className="text-white/60">
-              Showing <span className="text-white font-medium">{filteredImports.length}</span> {filteredImports.length === 1 ? 'import' : 'imports'}
+              Showing <span className="text-white font-medium">{filteredImports.length}</span>{" "}
+              {filteredImports.length === 1 ? "import" : "imports"}
               {hasActiveFilters && <span> with active filters</span>}
             </div>
-            
-            <div className="flex gap-2">
-              {filteredImports.length > 0 && (
-                <Select defaultValue="createdAt">
-                  <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/80">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white/10 backdrop-blur-lg border-white/10">
-                    <SelectItem value="createdAt" className="text-white/80 hover:text-white focus:text-white">
-                      Date (newest first)
-                    </SelectItem>
-                    <SelectItem value="title" className="text-white/80 hover:text-white focus:text-white">
-                      Title (A-Z)
-                    </SelectItem>
-                    <SelectItem value="progress" className="text-white/80 hover:text-white focus:text-white">
-                      Progress
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            <Select defaultValue="createdAt">
+              <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white/80">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className="bg-white/10 backdrop-blur-lg border-white/10">
+                <SelectItem value="createdAt">Date (newest first)</SelectItem>
+                <SelectItem value="title">Title (A-Z)</SelectItem>
+                <SelectItem value="progress">Progress</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredImports.map((item) => (
-              <div key={item.id}>
-                <ImportStatusCard
-                  id={item.id}
-                  title={item.title}
-                  status={item.status}
-                  className={statusColors[item.status]}
-                  origin={item.origin}
-                  destination={item.destination}
-                  eta={item.eta}
-                  lastUpdated={item.lastUpdated}
-                  progress={item.progress}
-                  onClick={() => handleImportClick(item.id)}
-                />
-              </div>
+              <ImportStatusCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                status={item.status}
+                className={statusColors[item.status]}
+                origin={item.origin}
+                destination={item.destination}
+                eta={item.eta}
+                lastUpdated={item.lastUpdated}
+                progress={item.progress}
+                onClick={() => handleImportClick(item.id)}
+              />
             ))}
           </div>
         </>
@@ -421,7 +376,11 @@ export default function ImportsPage() {
               : "You don't have any imports yet. Create your first import to get started."}
           </p>
           {hasActiveFilters ? (
-            <Button onClick={clearFilters} variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">
+            <Button
+              onClick={clearFilters}
+              variant="outline"
+              className="border-white/10 text-white/80 hover:bg-white/5"
+            >
               Clear All Filters
             </Button>
           ) : (
