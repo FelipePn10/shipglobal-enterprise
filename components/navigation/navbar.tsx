@@ -259,7 +259,7 @@ export default function Navbar({
             {/* Mobile Auth Section */}
             {showAuth && (
               <div className="pt-2 mt-2 border-t border-white/10">
-                {isLo1gedIn ? (
+                {isLoggedIn ? (
                   <div className="space-y-0.5">
                     <div className="px-2 py-1.5 text-sm font-medium text-white/80">
                       {userName || "Account"}
