@@ -53,14 +53,15 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
   })()
 
   // Format large numbers
-  const formatYAxis = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K`
+  const formatYAxis = (value: number): string => {
+    if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(1)}M`
+    } else if (value >= 1_000) {
+      return `${(value / 1_000).toFixed(1)}K`
     }
-    return value
+    return `${value}`
   }
+  
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
