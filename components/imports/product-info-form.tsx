@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/select"
 import { ExternalLink, Package2, Tag } from "lucide-react"
 import type { Control } from "react-hook-form"
-import type { ImportFormValues } from "../types"
-import { popularCountries, productCategories } from "../data"
+import type { ImportFormValues } from "@/types/types"
+import { popularCountries, productCategories } from "@/data/data"
 
 interface ProductInfoFormProps {
   control: Control<ImportFormValues>

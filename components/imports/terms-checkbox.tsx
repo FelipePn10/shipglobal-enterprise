@@ -1,7 +1,7 @@
 import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Control } from "react-hook-form"
-import type { ImportFormValues } from "../types"
+import type { ImportFormValues } from "@/types/types"
 
 interface TermsCheckboxProps {
   control: Control<ImportFormValues>

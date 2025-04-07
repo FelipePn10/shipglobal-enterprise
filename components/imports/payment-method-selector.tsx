@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Wallet } from "lucide-react"
 import type { Control, UseFormSetValue, UseFormWatch } from "react-hook-form"
-import type { ImportFormValues } from "../types"
-import { PaymentOptions } from "../components/payment-options"
+import type { ImportFormValues } from "@/types/types"
+import { PaymentOptions } from "@/components/imports/payment-options"
 
 interface PaymentMethodSelectorProps {
   control: Control<ImportFormValues>

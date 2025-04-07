@@ -2,7 +2,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input"
 import { User } from "lucide-react"
 import type { Control } from "react-hook-form"
-import type { ImportFormValues } from "../types"
+import type { ImportFormValues } from "@/types/types"
 
 interface PersonalInfoFormProps {
   control: Control<ImportFormValues>

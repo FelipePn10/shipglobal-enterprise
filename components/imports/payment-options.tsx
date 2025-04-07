@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertCircle, BanknoteIcon, CreditCardIcon, DollarSign, QrCode, ShieldCheck } from "lucide-react"
 import type { Control, UseFormSetValue, UseFormWatch } from "react-hook-form"
-import type { ImportFormValues } from "../types"
+import type { ImportFormValues } from "@/types/types"
 import { useEffect } from "react"
 
 interface PaymentOptionsProps {

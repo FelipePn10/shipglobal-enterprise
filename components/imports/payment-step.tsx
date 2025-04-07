@@ -1,5 +1,5 @@
 import { Check, CreditCard, DollarSign, QrCode, Wallet } from "lucide-react"
-import type { ImportFormValues } from "../types"
+import type { ImportFormValues } from "@/types/types"
 import type { UseFormWatch } from "react-hook-form"
 
 interface PaymentStepProps {
