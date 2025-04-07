@@ -7,6 +7,7 @@ import ServicesSection from "@/components/sections/services-section"
 import CtaSection from "@/components/sections/cta-section"
 import Footer from "@/components/sections/footer"
 import Navbar from "@/components/navigation/navbar"
+import ServiceComparisonTable from "./comparison/page"
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <Navbar />
       <HeroGeometric badge="ShipGlobal Solutions" title1="International" title2="Product Access" />
       <AboutSection />
+      <ServiceComparisonTable />
       <HowItWorksSection />
       <BenefitsSection />
       <ExpertiseSection />
