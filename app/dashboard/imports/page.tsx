@@ -26,7 +26,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 
 // Tipos para os dados de importação
 interface ImportItem {
-  id: string;
+  importId: string;
   title: string;
   status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue";
   origin: string;
@@ -50,7 +50,7 @@ const statusColors: Record<ImportItem["status"], string> = {
 // Dados mockados para teste (substituir pela API real quando disponível)
 const mockImports: ImportItem[] = [
   {
-    id: "IMP-001",
+    importId: "string",
     title: "Electronics Shipment",
     status: "shipping",
     origin: "Shenzhen, CN",
@@ -61,7 +61,7 @@ const mockImports: ImportItem[] = [
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: "IMP-002",
+    importId: "string",
     title: "Clothing Batch",
     status: "pending",
     origin: "Dhaka, BD",
@@ -134,7 +134,7 @@ export default function ImportsPage() {
     return importData.filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        item.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        item.importId.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.origin.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.destination.toLowerCase().includes(debouncedSearch.toLowerCase());
 
@@ -167,7 +167,7 @@ export default function ImportsPage() {
   const handleNewImport = useCallback(async () => {
     setIsCreating(true);
     const newImport: ImportItem = {
-      id: `IMP-${Date.now()}`,
+      importId: `IMP-${Date.now()}`,
       title: "New Import",
       status: "pending",
       origin: "Unknown",
@@ -195,7 +195,7 @@ export default function ImportsPage() {
         description: "Your new import has been created successfully",
       });
       await fetchImports();
-      router.push(`/dashboard/imports/${newImport.id}`);
+      router.push(`/dashboard/imports/${newImport.importId}`);
     } catch (error) {
       console.error("Error creating import:", error);
       // Adicionar ao estado local como fallback
@@ -205,7 +205,7 @@ export default function ImportsPage() {
         description: "Saved locally. Please check the API status.",
         variant: "destructive",
       });
-      router.push(`/dashboard/imports/${newImport.id}`);
+      router.push(`/dashboard/imports/${newImport.importId}`);
     } finally {
       setIsCreating(false);
     }
@@ -351,8 +351,8 @@ export default function ImportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredImports.map((item) => (
               <ImportStatusCard
-                key={item.id}
-                id={item.id}
+                key={item.importId}
+                id={item.importId}
                 title={item.title}
                 status={item.status}
                 className={statusColors[item.status]}
@@ -361,7 +361,7 @@ export default function ImportsPage() {
                 eta={item.eta}
                 lastUpdated={item.lastUpdated}
                 progress={item.progress}
-                onClick={() => handleImportClick(item.id)}
+                onClick={() => handleImportClick(item.importId)}
               />
             ))}
           </div>
