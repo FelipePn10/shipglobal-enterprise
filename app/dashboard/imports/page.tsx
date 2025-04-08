@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import ImportStatusCard from "@/components/dashboard/import-status-card";
 import { Button } from "@/components/ui/button";
@@ -27,14 +28,16 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 // Tipos para os dados de importação
 interface ImportItem {
   importId: string;
+  userId?: number;
+  companyId?: number;
   title: string;
   status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue";
   origin: string;
   destination: string;
-  eta: string;
-  lastUpdated: string;
+  eta?: string;
   progress: number;
   createdAt: string;
+  lastUpdated: string;
 }
 
 // Mapeamento de cores por status
@@ -47,35 +50,12 @@ const statusColors: Record<ImportItem["status"], string> = {
   issue: "bg-red-500/20 text-red-400",
 };
 
-// Dados mockados para teste (substituir pela API real quando disponível)
-const mockImports: ImportItem[] = [
-  {
-    importId: "string",
-    title: "Electronics Shipment",
-    status: "shipping",
-    origin: "Shenzhen, CN",
-    destination: "Los Angeles, US",
-    eta: "2025-04-15",
-    lastUpdated: new Date().toLocaleString(),
-    progress: 75,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    importId: "string",
-    title: "Clothing Batch",
-    status: "pending",
-    origin: "Dhaka, BD",
-    destination: "New York, US",
-    eta: "TBD",
-    lastUpdated: new Date().toLocaleString(),
-    progress: 10,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+const mockImports: ImportItem[] = [];
 
 export default function ImportsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const { data: session } = useSession();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [importData, setImportData] = useState<ImportItem[]>([]);
@@ -83,10 +63,18 @@ export default function ImportsPage() {
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
+  const importStatusData = [];
+
   const debouncedSearch = useDebounce<string>(searchQuery, 300);
 
   // Função para buscar importações
   const fetchImports = useCallback(async () => {
+    const headers = {
+      ...(session?.user?.type === "company" 
+        ? { "company-id": session.user.id }
+        : { "user-id": session?.user?.id }
+      )
+    };
     setIsLoading(true);
     try {
       const response = await fetch("/api/imports");
@@ -97,7 +85,7 @@ export default function ImportsPage() {
 
       const data = await response.json();
       const formattedData: ImportItem[] = data.map((item: any) => ({
-        id: item.importId,
+        importId: item.importId,
         title: item.title,
         status: item.status as ImportItem["status"],
         origin: item.origin,
@@ -166,50 +154,51 @@ export default function ImportsPage() {
   // Função para criar uma nova importação
   const handleNewImport = useCallback(async () => {
     setIsCreating(true);
-    const newImport: ImportItem = {
-      importId: `IMP-${Date.now()}`,
-      title: "New Import",
-      status: "pending",
-      origin: "Unknown",
-      destination: "Unknown",
-      eta: "TBD",
-      progress: 0,
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toLocaleString(),
-    };
-
     try {
+      if (!session?.user) {
+        throw new Error("Acesso não autorizado");
+      }
+  
+      const isCompany = session.user.type === "company";
+      const headers = {
+        "Content-Type": "application/json",
+        ...(isCompany 
+          ? { "company-id": session.user.id }
+          : { "user-id": session.user.id }
+        )
+      };
+  
       const response = await fetch("/api/imports", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newImport),
+        headers,
+        body: JSON.stringify({
+          title: "Nova Importação",
+          origin: "Local padrão",
+          destination: "Destino padrão",
+          status: "draft",
+          progress: 0
+        }),
       });
-
+  
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create import: ${response.status} - ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha na criação');
       }
-
-      toast({
-        title: "Import created",
-        description: "Your new import has been created successfully",
-      });
-      await fetchImports();
+  
+      const newImport = await response.json();
       router.push(`/dashboard/imports/${newImport.importId}`);
+      
     } catch (error) {
       console.error("Error creating import:", error);
-      // Adicionar ao estado local como fallback
-      setImportData((prev) => [...prev, newImport]);
       toast({
-        title: "Error creating import",
-        description: "Saved locally. Please check the API status.",
-        variant: "destructive",
+        title: "Erro na criação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
       });
-      router.push(`/dashboard/imports/${newImport.importId}`);
     } finally {
       setIsCreating(false);
     }
-  }, [fetchImports, router]);
+  }, [router, session]);
 
   // Limpar filtros
   const clearFilters = useCallback(() => {
@@ -352,7 +341,7 @@ export default function ImportsPage() {
             {filteredImports.map((item) => (
               <ImportStatusCard
                 key={item.importId}
-                id={item.importId}
+                importId={item.importId}
                 title={item.title}
                 status={item.status}
                 className={statusColors[item.status]}

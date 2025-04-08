@@ -7,49 +7,31 @@ frontend-1  |    - Local:        http://localhost:3000
 frontend-1  |    - Network:      http://172.19.0.3:3000
 frontend-1  | 
 frontend-1  |  ✓ Starting...
-frontend-1  |  ✓ Ready in 562ms
-frontend-1  | Conexão com o banco de dados estabelecida com sucesso!
-frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
-frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
-frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
-frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
-frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
-frontend-1  |   code: 'ER_NO_SUCH_TABLE',
-frontend-1  |   errno: 1146,
-frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
-frontend-1  |   sqlState: '42S02',
-frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  |  ✓ Ready in 505ms
+frontend-1  | Erro ao conectar ao banco de dados: Error: Access denied for user 'root'@'172.19.0.3' (using password: NO)
+frontend-1  |     at I.asError (.next/server/chunks/830.js:7:145696)
+frontend-1  |     at r.execute (.next/server/chunks/830.js:7:124154)
+frontend-1  |     at A.handlePacket (.next/server/chunks/830.js:7:131852)
+frontend-1  |     at A.onPacket (.next/server/chunks/830.js:7:126312)
+frontend-1  |     at A.executeStart (.next/server/chunks/830.js:7:86824)
+frontend-1  |     at Socket.<anonymous> (.next/server/chunks/830.js:7:126458) {
+frontend-1  |   code: 'ER_ACCESS_DENIED_ERROR',
+frontend-1  |   errno: 1045,
+frontend-1  |   sqlState: '28000',
+frontend-1  |   sqlMessage: "Access denied for user 'root'@'172.19.0.3' (using password: NO)",
+frontend-1  |   sql: undefined
 frontend-1  | }
-frontend-1  | Error fetching import by ID: Error: Table 'companydb.imports' doesn't exist
-frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
-frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
-frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
-frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
-frontend-1  |   code: 'ER_NO_SUCH_TABLE',
-frontend-1  |   errno: 1146,
-frontend-1  |   sql: "select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports` where `imports`.`import_id` = 'IMP-1744119453205' limit 1",
-frontend-1  |   sqlState: '42S02',
-frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
-frontend-1  | }
-frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
-frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
-frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
-frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
-frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
-frontend-1  |   code: 'ER_NO_SUCH_TABLE',
-frontend-1  |   errno: 1146,
-frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
-frontend-1  |   sqlState: '42S02',
-frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
-frontend-1  | }
-frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
-frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
-frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
-frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
-frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
-frontend-1  |   code: 'ER_NO_SUCH_TABLE',
-frontend-1  |   errno: 1146,
-frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
-frontend-1  |   sqlState: '42S02',
-frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  | Erro ao conectar ao banco de dados: Error: The edge runtime does not support Node.js 'net' module.
+frontend-1  | Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime
+frontend-1  |     at Object.apply (.next/server/middleware.js:8:594)
+frontend-1  |     at new h (.next/server/middleware.js:1:4765)
+frontend-1  |     at new E (.next/server/middleware.js:1:217541)
+frontend-1  |     at new E (.next/server/middleware.js:1:16863)
+frontend-1  |     at E.getConnection (.next/server/middleware.js:1:212282)
+frontend-1  |     at <unknown> (.next/server/middleware.js:1:323769)
+frontend-1  |     at new Promise (<anonymous>)
+frontend-1  |     at a.getConnection (.next/server/middleware.js:1:323742)
+frontend-1  |     at <unknown> (.next/server/middleware.js:25:37866)
+frontend-1  |     at 8309 (.next/server/middleware.js:25:38033) {
+frontend-1  |   
 frontend-1  | }

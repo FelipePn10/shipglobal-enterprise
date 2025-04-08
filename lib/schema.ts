@@ -1,5 +1,5 @@
 import { mysqlTable, int, varchar, boolean, datetime, text } from "drizzle-orm/mysql-core";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 export const companies = mysqlTable("companies", {
   id: int("id").primaryKey().autoincrement(),
@@ -43,16 +43,22 @@ export const messages = mysqlTable("messages", {
   isRead: boolean("is_read").default(false).notNull(),
 });
 
+
 export const imports = mysqlTable("imports", {
   id: int("id").primaryKey().autoincrement(),
-  importId: varchar("import_id", { length: 50 }).notNull().unique(), // e.g., "IMP-2023-0042"
-  companyId: int("company_id").references(() => companies.id).notNull(),
+  importId: varchar("import_id", { length: 50 }).notNull().unique(),
+  userId: int("user_id").references(() => users.id),
+  companyId: int("company_id").references(() => companies.id),
   title: varchar("title", { length: 255 }).notNull(),
-  status: varchar("status", { length: 50 }).notNull(), // "pending", "processing", "customs", "shipping", "delivered", "issue"
+  status: varchar("status", { length: 50 }).notNull().default("draft"),
   origin: varchar("origin", { length: 255 }).notNull(),
   destination: varchar("destination", { length: 255 }).notNull(),
-  eta: varchar("eta", { length: 50 }).notNull(),
+  progress: int("progress").notNull().default(0),
+  eta: varchar("eta", { length: 50 }),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   lastUpdated: datetime("last_updated").default(sql`CURRENT_TIMESTAMP`).notNull(),
-  progress: int("progress").notNull(),
-  createdAt: datetime("createdAt").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
+
+export const importRelations = relations(imports, ({ one }) => ({
+  user: one(users, { fields: [imports.userId], references: [users.id] })
+}))

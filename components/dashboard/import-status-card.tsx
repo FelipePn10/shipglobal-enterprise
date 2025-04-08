@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Progress } from "@/components/ui/progress"
 
 interface ImportStatusCardProps {
-  id: string
+  importId: string
   title: string
   status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue"
   origin: string
@@ -20,7 +20,7 @@ interface ImportStatusCardProps {
 }
 
 export default function ImportStatusCard({
-  id,
+  importId,
   title,
   status,
   origin,
@@ -83,7 +83,7 @@ export default function ImportStatusCard({
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-medium text-white">{title}</h3>
-          <p className="text-xs text-white/60">ID: {id}</p>
+          <p className="text-xs text-white/60">ID: {importId}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className={cn("px-2 py-1 rounded text-xs font-medium border", getStatusColor(status))}>

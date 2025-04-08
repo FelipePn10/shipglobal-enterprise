@@ -7,12 +7,17 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ["@planetscale/database", "mysql2"]
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({
         "react-native-sqlite-storage": "commonjs react-native-sqlite-storage",
         "@sap/hana-client/extension/Stream": "commonjs @sap/hana-client/extension/Stream",
         "mysql": "commonjs mysql2",
+         "utf-8-validate": "commonjs utf-8-validate",
+      bufferutil: "commonjs bufferutil"
       });
       config.module.rules.push({
         test: /\.js$/,

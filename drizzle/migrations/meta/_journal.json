@@ -22,6 +22,27 @@
       "when": 1744035509619,
       "tag": "0002_volatile_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1744128971476,
+      "tag": "0003_third_domino",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1744129503252,
+      "tag": "0004_past_jimmy_woo",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1744135630218,
+      "tag": "0005_special_nightmare",
+      "breakpoints": true
     }
   ]
 }

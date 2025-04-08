@@ -1,52 +1,93 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { imports } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const importList = await db.select().from(imports);
-    return NextResponse.json(importList);
+    const userId = request.headers.get('user-id');
+    const companyId = request.headers.get('company-id');
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const query = companyId 
+      ? and(eq(imports.userId, Number(userId)), eq(imports.companyId, Number(companyId)))
+      : eq(imports.userId, Number(userId));
+
+    const userImports = await db
+      .select()
+      .from(imports)
+      .where(query);
+
+    return NextResponse.json(userImports);
   } catch (error) {
-    console.error("Error fetching imports:", error);
-    return NextResponse.json({ error: "Failed to fetch imports" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch imports" },
+      { status: 500 }
+    );
   }
 }
 
+
 export async function POST(request: Request) {
   try {
+    const userId = request.headers.get("user-id");
+    const companyId = request.headers.get("company-id");
+    
+    // Validação de autenticação
+    if (!userId && !companyId) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado" }, 
+        { status: 401 }
+      );
+    }
+
+    // Não permitir ambos IDs
+    if (userId && companyId) {
+      return NextResponse.json(
+        { error: "Use apenas user-id ou company-id" }, 
+        { status: 400 }
+      );
+    }
+
     const data = await request.json();
-    const { importId, companyId, title, status, origin, destination, eta, progress } = data;
-
-    // Validação básica
-    if (!importId || !title) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    
+    // Validação de campos obrigatórios
+    const requiredFields = ['title', 'origin', 'destination'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { error: `Campos obrigatórios faltando: ${missingFields.join(', ')}` },
+        { status: 400 }
+      );
     }
 
-    await db.insert(imports).values({
-      importId,
-      companyId: companyId || 1, // Valor padrão se não fornecido
-      title,
-      status: status || "pending",
-      origin: origin || "Unknown",
-      destination: destination || "Unknown",
-      eta: eta || "TBD",
-      progress: progress || 0,
-    });
+    const importData = {
+      importId: `IMP-${Date.now()}`,
+      title: data.title,
+      origin: data.origin,
+      destination: data.destination,
+      status: data.status || 'draft',
+      progress: data.progress || 0,
+      eta: data.eta || null,
+      ...(userId 
+        ? { userId: parseInt(userId) } 
+        : { companyId: parseInt(companyId!) }
+      )
+    };
 
-    const newImport = await db
-      .select()
-      .from(imports)
-      .where(eq(imports.importId, importId))
-      .limit(1);
+    const newImport = await db.insert(imports).values(importData);
 
-    if (!newImport.length) {
-      return NextResponse.json({ error: "Failed to retrieve new import" }, { status: 500 });
-    }
+    return NextResponse.json(newImport, { status: 201 });
 
-    return NextResponse.json(newImport[0], { status: 201 });
   } catch (error) {
-    console.error("Error creating import:", error);
-    return NextResponse.json({ error: "Failed to create import" }, { status: 500 });
+    console.error("Database error:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }

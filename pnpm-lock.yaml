@@ -14,6 +14,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.10.0(react-hook-form@7.55.0(react@19.1.0))
+      '@planetscale/database':
+        specifier: ^1.19.0
+        version: 1.19.0
       '@radix-ui/react-accordion':
         specifier: ^1.2.2
         version: 1.2.3(@types/react-dom@19.0.4(@types/react@19.0.12))(@types/react@19.0.12)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -115,7 +118,7 @@ importers:
         version: 4.1.0
       drizzle-orm:
         specifier: ^0.41.0
-        version: 0.41.0(gel@2.0.1)(mysql2@3.14.0)
+        version: 0.41.0(@planetscale/database@1.19.0)(gel@2.0.1)(mysql2@3.14.0)
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.1.0)
@@ -730,6 +733,10 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
+
+  '@planetscale/database@1.19.0':
+    resolution: {integrity: sha512-Tv4jcFUFAFjOWrGSio49H6R2ijALv0ZzVBfJKIdm+kl9X046Fh4LLawrF9OMsglVbK6ukqMJsUCeucGAFTBcMA==}
+    engines: {node: '>=16'}
 
   '@radix-ui/number@1.1.0':
     resolution: {integrity: sha512-V3gRzhVNU1ldS5XhAPTom1fOIo4ccrjjJgmE+LI2h/WaFpHmx0MQApT+KZHnx8abG6Avtfcz4WoEciMnpFT3HQ==}
@@ -2871,6 +2878,8 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
+  '@planetscale/database@1.19.0': {}
+
   '@radix-ui/number@1.1.0': {}
 
   '@radix-ui/primitive@1.1.1': {}
@@ -3825,8 +3834,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.41.0(gel@2.0.1)(mysql2@3.14.0):
+  drizzle-orm@0.41.0(@planetscale/database@1.19.0)(gel@2.0.1)(mysql2@3.14.0):
     optionalDependencies:
+      '@planetscale/database': 1.19.0
       gel: 2.0.1
       mysql2: 3.14.0
 

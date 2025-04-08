@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   const importStatusData = [
     {
-      id: "IMP-2023-0042",
+      importId: "IMP-2023-0042",
       title: "Electronics Shipment",
       status: "shipping" as const,
       origin: "Shenzhen, China",
@@ -61,7 +61,7 @@ export default function DashboardPage() {
       progress: 65,
     },
     {
-      id: "IMP-2023-0041",
+      importId: "IMP-2023-0041",
       title: "Furniture Import",
       status: "customs" as const,
       origin: "Milan, Italy",
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       progress: 45,
     },
     {
-      id: "IMP-2023-0040",
+      importId: "IMP-2023-0040",
       title: "Textile Materials",
       status: "issue" as const,
       origin: "Mumbai, India",
@@ -81,7 +81,7 @@ export default function DashboardPage() {
       progress: 30,
     },
     {
-      id: "IMP-2023-0039",
+      importId: "IMP-2023-0039",
       title: "Automotive Parts",
       status: "processing" as const,
       origin: "Stuttgart, Germany",
@@ -266,8 +266,8 @@ export default function DashboardPage() {
     { name: "Dec", imports: 0, revenue: 0 },
   ]
 
-  const handleImportClick = (id: string) => {
-    router.push(`/dashboard/imports/${id}`)
+  const handleImportClick = (importId: string) => {
+    router.push(`/dashboard/imports/${importId}`)
   }
 
   return (
@@ -358,8 +358,8 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {importStatusData.slice(0, 4).map((item) => (
                     <ImportStatusCard
-                      key={item.id}
-                      id={item.id}
+                      key={item.importId}
+                      importId={item.importId}
                       title={item.title}
                       status={item.status}
                       origin={item.origin}
@@ -367,7 +367,7 @@ export default function DashboardPage() {
                       eta={item.eta}
                       lastUpdated={item.lastUpdated}
                       progress={item.progress}
-                      onClick={() => handleImportClick(item.id)}
+                      onClick={() => handleImportClick(item.importId)}
                     />
                   ))}
                 </div>
@@ -394,8 +394,8 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {importStatusData.map((item) => (
               <ImportStatusCard
-                key={item.id}
-                id={item.id}
+                key={item.importId}
+                importId={item.importId}
                 title={item.title}
                 status={item.status}
                 origin={item.origin}
@@ -403,7 +403,7 @@ export default function DashboardPage() {
                 eta={item.eta}
                 lastUpdated={item.lastUpdated}
                 progress={item.progress}
-                onClick={() => handleImportClick(item.id)}
+                onClick={() => handleImportClick(item.importId)}
               />
             ))}
           </div>
