@@ -1,0 +1,11 @@
+frontend-1  | 
+frontend-1  | > ShipGlobal-Enterprise@0.1.0 start /app
+frontend-1  | > next start
+frontend-1  | 
+frontend-1  |    ▲ Next.js 15.2.4
+frontend-1  |    - Local:        http://localhost:3000
+frontend-1  |    - Network:      http://172.18.0.3:3000
+frontend-1  | 
+frontend-1  |  ✓ Starting...
+frontend-1  |  ✓ Ready in 591ms
+frontend-1  | Conexão com o banco de dados estabelecida com sucesso!

@@ -1,12 +1,13 @@
 {
-  "name": "Ship-Global-Enterprise",
+  "name": "ShipGlobal-Enterprise",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "drizzle-kit generate:mysql && drizzle-kit push:mysql"
   },
   "packageManager": "pnpm@10.7.1",
   "dependencies": {

@@ -4,6 +4,8 @@ node_modules
 .gitignore
 Dockerfile
 README.md
+.next
+.vscode
 *.log
 *.env
 *.tsbuildinfo

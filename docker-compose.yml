@@ -1,37 +1,47 @@
 services:
   mysql:
     image: mysql:8.0
+    container_name: hero-mysql
     environment:
       MYSQL_ROOT_PASSWORD: admin
       MYSQL_DATABASE: companydb
+      TZ: America/Sao_Paulo
     ports:
       - "3310:3306"
     volumes:
       - hero-mysql-data:/var/lib/mysql
+      - ./mysql/timezone:/etc/mysql/conf.d
     networks:
-      - app-network
-
-  backend:
-    image: backend-image  # <- Imagem buildada separadamente
-    ports:
-      - "8081:8081"
-    depends_on:
-      - mysql
-    networks:
-      - app-network
+      - hero-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
 
   frontend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
-      - "3000:3000"  # frontend principal
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: admin
+      DB_NAME: companydb
     depends_on:
-      - backend
+      mysql:
+        condition: service_healthy
     networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
+      - hero-network
+    volumes:
+      - .:/app:delegated
+      - /app/node_modules
 
 volumes:
   hero-mysql-data:
+
+networks:
+  hero-network:
+    driver: bridge
