@@ -4,8 +4,52 @@ frontend-1  | > next start
 frontend-1  | 
 frontend-1  |    ▲ Next.js 15.2.4
 frontend-1  |    - Local:        http://localhost:3000
-frontend-1  |    - Network:      http://172.18.0.3:3000
+frontend-1  |    - Network:      http://172.19.0.3:3000
 frontend-1  | 
 frontend-1  |  ✓ Starting...
-frontend-1  |  ✓ Ready in 591ms
+frontend-1  |  ✓ Ready in 562ms
 frontend-1  | Conexão com o banco de dados estabelecida com sucesso!
+frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
+frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
+frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
+frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
+frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
+frontend-1  |   code: 'ER_NO_SUCH_TABLE',
+frontend-1  |   errno: 1146,
+frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
+frontend-1  |   sqlState: '42S02',
+frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  | }
+frontend-1  | Error fetching import by ID: Error: Table 'companydb.imports' doesn't exist
+frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
+frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
+frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
+frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
+frontend-1  |   code: 'ER_NO_SUCH_TABLE',
+frontend-1  |   errno: 1146,
+frontend-1  |   sql: "select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports` where `imports`.`import_id` = 'IMP-1744119453205' limit 1",
+frontend-1  |   sqlState: '42S02',
+frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  | }
+frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
+frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
+frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
+frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
+frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
+frontend-1  |   code: 'ER_NO_SUCH_TABLE',
+frontend-1  |   errno: 1146,
+frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
+frontend-1  |   sqlState: '42S02',
+frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  | }
+frontend-1  | Error fetching imports: Error: Table 'companydb.imports' doesn't exist
+frontend-1  |     at s.query (.next/server/chunks/5057.js:7:35791)
+frontend-1  |     at EB.execute (.next/server/chunks/5057.js:7:31061)
+frontend-1  |     at Ee.execute (.next/server/chunks/5057.js:7:20059)
+frontend-1  |     at Ee.then (.next/server/chunks/5057.js:7:14407) {
+frontend-1  |   code: 'ER_NO_SUCH_TABLE',
+frontend-1  |   errno: 1146,
+frontend-1  |   sql: 'select `id`, `import_id`, `company_id`, `title`, `status`, `origin`, `destination`, `eta`, `last_updated`, `progress`, `createdAt` from `imports`',
+frontend-1  |   sqlState: '42S02',
+frontend-1  |   sqlMessage: "Table 'companydb.imports' doesn't exist"
+frontend-1  | }
