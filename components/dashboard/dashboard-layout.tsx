@@ -1,7 +1,8 @@
-"use client"
+// components/dashboard/dashboard-layout.tsx
+"use client";
 
-import { useState, type ReactNode, useEffect } from "react"
-import MinimalNavbar from "@/components/navigation/minimal-navbar"
+import { useState, type ReactNode, useEffect } from "react";
+import MinimalNavbar from "@/components/navigation/minimal-navbar";
 import {
   BarChart3,
   Calendar,
@@ -18,11 +19,12 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,95 +32,101 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { ThemeProvider } from "@/components/theme-provider"
-import { useTheme } from "next-themes" 
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
+import { useTheme } from "next-themes";
+
+// Definimos o tipo da sessão mock para desenvolvimento
+interface MockSession {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    type: "user" | "company";
+    companyId?: string;
+  };
+}
 
 interface DashboardLayoutProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export default function DashboardLayout({ children, className }: DashboardLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [notifications, setNotifications] = useState(3)
-  const pathname = usePathname()
-  const { setTheme } = useTheme()
-  
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notifications, setNotifications] = useState(3);
+  const pathname = usePathname();
+  const { setTheme } = useTheme();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   // Forçar o tema dark quando o componente montar
   useEffect(() => {
-    setTheme("dark")
-  }, [setTheme])
+    setTheme("dark");
+  }, [setTheme]);
+
+  // Dados mock para desenvolvimento
+  const mockSession: MockSession = {
+    user: {
+      id: "1",
+      name: "Dev User",
+      email: "dev@example.com",
+      type: "user",
+    },
+  };
+
+  // Em desenvolvimento, usa sessão mock imediatamente
+  const effectiveSession = process.env.NODE_ENV === "development" ? mockSession : session;
+  const effectiveStatus = process.env.NODE_ENV === "development" ? "authenticated" : status;
+
+  // Verificar autenticação apenas em produção
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") return; // Ignora autenticação em dev
+    if (effectiveStatus === "loading") return;
+    if (effectiveStatus === "unauthenticated") {
+      router.push("/auth/login");
+    }
+  }, [effectiveStatus, router]);
+
+  // Enquanto verifica a sessão em produção, mostra um carregamento
+  if (effectiveStatus === "loading") {
+    return <div className="flex min-h-screen items-center justify-center bg-black text-white">Loading...</div>;
+  }
+
+  // Em produção, não renderiza o dashboard se não autenticado
+  if (effectiveStatus === "unauthenticated") {
+    return null;
+  }
 
   const navigation = [
     {
       title: "Main",
       items: [
-        {
-          title: "Dashboard",
-          href: "/dashboard",
-          icon: Home,
-          isActive: pathname === "/dashboard",
-        },
+        { title: "Dashboard", href: "/dashboard", icon: Home, isActive: pathname === "/dashboard" },
         {
           title: "Imports",
           href: "/dashboard/imports",
           icon: Package,
           isActive: pathname.startsWith("/dashboard/imports"),
         },
-        {
-          title: "Documents",
-          href: "/dashboard/documents",
-          icon: FileText,
-          isActive: pathname === "/dashboard/documents",
-        },
-        {
-          title: "Messages",
-          href: "/dashboard/messages",
-          icon: MessageSquare,
-          isActive: pathname === "/dashboard/messages",
-        },
+        { title: "Documents", href: "/dashboard/documents", icon: FileText, isActive: pathname === "/dashboard/documents" },
+        { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, isActive: pathname === "/dashboard/messages" },
       ],
     },
     {
       title: "Management",
       items: [
-        {
-          title: "Finances",
-          href: "/dashboard/finances",
-          icon: Wallet,
-          isActive: pathname === "/dashboard/finances",
-        },
-        {
-          title: "Compliance",
-          href: "/dashboard/compliance",
-          icon: ShieldCheck,
-          isActive: pathname === "/dashboard/compliance",
-        },
-        {
-          title: "Analytics",
-          href: "/dashboard/analytics",
-          icon: BarChart3,
-          isActive: pathname === "/dashboard/analytics",
-        },
-        {
-          title: "Calendar",
-          href: "/dashboard/calendar",
-          icon: Calendar,
-          isActive: pathname === "/dashboard/calendar",
-        },
+        { title: "Finances", href: "/dashboard/finances", icon: Wallet, isActive: pathname === "/dashboard/finances" },
+        { title: "Compliance", href: "/dashboard/compliance", icon: ShieldCheck, isActive: pathname === "/dashboard/compliance" },
+        { title: "Analytics", href: "/dashboard/analytics", icon: BarChart3, isActive: pathname === "/dashboard/analytics" },
+        { title: "Calendar", href: "/dashboard/calendar", icon: Calendar, isActive: pathname === "/dashboard/calendar" },
       ],
     },
     {
       title: "Team",
       items: [
-        {
-          title: "Team Members",
-          href: "/dashboard/team",
-          icon: Users,
-          isActive: pathname === "/dashboard/team",
-        },
+        { title: "Team Members", href: "/dashboard/team", icon: Users, isActive: pathname === "/dashboard/team" },
         {
           title: "Notifications",
           href: "/dashboard/notifications",
@@ -128,33 +136,34 @@ export default function DashboardLayout({ children, className }: DashboardLayout
         },
       ],
     },
-  ]
+  ];
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed)
-  }
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
       <div className="flex min-h-screen flex-col bg-black text-gray-300">
-        <MinimalNavbar logoText="Ship Global" isLoggedIn={true} userName="John Smith" notifications={notifications} className="pl-4" />
+        <MinimalNavbar
+          logoText="Ship Global"
+          isLoggedIn={true}
+          userName={effectiveSession?.user?.name || "John Smith"}
+          notifications={notifications}
+          className="pl-4"
+        />
         <div className="flex flex-1 flex-col md:flex-row">
-          {/* Sidebar */}
           <div
             className={cn(
               "flex h-full flex-col border-r border-zinc-800/50 bg-gradient-to-b from-zinc-950 to-black transition-all duration-300 relative",
-              sidebarCollapsed ? "w-16" : "w-64",
+              sidebarCollapsed ? "w-16" : "w-64"
             )}
           >
-            {/* Toggle button */}
-            <button 
+            <button
               onClick={toggleSidebar}
               className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white focus:outline-none z-10"
             >
-              {sidebarCollapsed ? 
-                <ChevronRight className="h-4 w-4" /> : 
-                <ChevronLeft className="h-4 w-4" />
-              }
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
 
             <div className="flex-1 overflow-auto py-4 px-2">
@@ -170,34 +179,25 @@ export default function DashboardLayout({ children, className }: DashboardLayout
                         href={item.href}
                         className={cn(
                           "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                          item.isActive
-                            ? "bg-zinc-800/80 text-white"
-                            : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200",
+                          item.isActive ? "bg-zinc-800/80 text-white" : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
                         )}
                       >
                         <div className="relative flex-shrink-0">
-                          <item.icon className={cn(
-                            "h-5 w-5",
-                            item.isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
-                          )} />
-                          
-                          {/* Notification badge */}
+                          <item.icon
+                            className={cn(
+                              "h-5 w-5",
+                              item.isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                            )}
+                          />
                           {item.badge && (
                             <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                               {item.badge}
                             </span>
                           )}
                         </div>
-                        
                         {!sidebarCollapsed && (
-                          <span className={cn(
-                            item.isActive ? "font-medium" : "font-normal"
-                          )}>
-                            {item.title}
-                          </span>
+                          <span className={cn(item.isActive ? "font-medium" : "font-normal")}>{item.title}</span>
                         )}
-                        
-                        {/* Active indicator */}
                         {item.isActive && !sidebarCollapsed && (
                           <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white"></div>
                         )}
@@ -207,7 +207,7 @@ export default function DashboardLayout({ children, className }: DashboardLayout
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t border-zinc-800/50 pt-3">
               <div className="px-2 py-2">
                 <div className="space-y-1">
@@ -217,49 +217,48 @@ export default function DashboardLayout({ children, className }: DashboardLayout
                       "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                       pathname === "/dashboard/settings"
                         ? "bg-zinc-800/80 text-white"
-                        : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200",
+                        : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
                     )}
                   >
-                    <Settings className={cn(
-                      "h-5 w-5",
-                      pathname === "/dashboard/settings" ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
-                    )} />
+                    <Settings
+                      className={cn(
+                        "h-5 w-5",
+                        pathname === "/dashboard/settings" ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                      )}
+                    />
                     {!sidebarCollapsed && <span>Settings</span>}
-                    
-                    {/* Active indicator */}
                     {pathname === "/dashboard/settings" && !sidebarCollapsed && (
                       <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white"></div>
                     )}
                   </Link>
-                  
                   <Link
                     href="/dashboard/help"
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                       pathname === "/dashboard/help"
                         ? "bg-zinc-800/80 text-white"
-                        : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200",
+                        : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
                     )}
                   >
-                    <HelpCircle className={cn(
-                      "h-5 w-5",
-                      pathname === "/dashboard/help" ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
-                    )} />
+                    <HelpCircle
+                      className={cn(
+                        "h-5 w-5",
+                        pathname === "/dashboard/help" ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                      )}
+                    />
                     {!sidebarCollapsed && <span>Help & Support</span>}
-                    
-                    {/* Active indicator */}
                     {pathname === "/dashboard/help" && !sidebarCollapsed && (
                       <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white"></div>
                     )}
                   </Link>
                 </div>
               </div>
-              
+
               <div className="p-4 mt-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className={cn(
                         "w-full gap-2 px-3 text-zinc-300 hover:bg-zinc-900/60 hover:text-zinc-100 rounded-lg",
                         sidebarCollapsed ? "justify-center" : "justify-start"
@@ -271,8 +270,8 @@ export default function DashboardLayout({ children, className }: DashboardLayout
                       </Avatar>
                       {!sidebarCollapsed && (
                         <div className="flex flex-col items-start text-sm">
-                          <span className="font-medium text-white">John Doe</span>
-                          <span className="text-xs text-zinc-500">Admin</span>
+                          <span className="font-medium text-white">{effectiveSession?.user?.name || "John Doe"}</span>
+                          <span className="text-xs text-zinc-500">{effectiveSession?.user?.type || "Admin"}</span>
                         </div>
                       )}
                     </Button>
@@ -302,5 +301,5 @@ export default function DashboardLayout({ children, className }: DashboardLayout
         </div>
       </div>
     </ThemeProvider>
-  )
+  );
 }

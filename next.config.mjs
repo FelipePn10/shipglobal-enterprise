@@ -7,9 +7,6 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ["@planetscale/database", "mysql2"]
-  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({

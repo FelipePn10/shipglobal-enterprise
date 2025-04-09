@@ -1,17 +1,18 @@
+// app/dashboard/imports/page.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import ImportStatusCard from "@/components/dashboard/import-status-card";
 import { Button } from "@/components/ui/button";
 import { Package, Search, Calendar, Filter, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImportButton } from "../../../components/imports/import-button";
+
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
+import { NewImportModal } from "./new-importal-modal";
 
 // Hook de debounce personalizado
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -31,16 +32,15 @@ interface ImportItem {
   userId?: number;
   companyId?: number;
   title: string;
-  status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue";
+  status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue" | "draft";
   origin: string;
   destination: string;
-  eta?: string;
+  eta?: string | null;
   progress: number;
   createdAt: string;
   lastUpdated: string;
 }
 
-// Mapeamento de cores por status
 const statusColors: Record<ImportItem["status"], string> = {
   pending: "bg-yellow-500/20 text-yellow-400",
   processing: "bg-blue-500/20 text-blue-400",
@@ -48,36 +48,66 @@ const statusColors: Record<ImportItem["status"], string> = {
   shipping: "bg-indigo-500/20 text-indigo-400",
   delivered: "bg-green-500/20 text-green-400",
   issue: "bg-red-500/20 text-red-400",
+  draft: "bg-gray-500/20 text-gray-400",
 };
 
-const mockImports: ImportItem[] = [];
+// Dados mock para desenvolvimento
+const mockImports: ImportItem[] = [
+  {
+    importId: "1",
+    title: "Sample Import 1",
+    status: "pending",
+    origin: "China",
+    destination: "Brazil",
+    eta: "2025-04-20",
+    progress: 30,
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+  },
+  {
+    importId: "2",
+    title: "Sample Import 2",
+    status: "delivered",
+    origin: "USA",
+    destination: "Brazil",
+    eta: "2025-04-10",
+    progress: 100,
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+  },
+];
 
 export default function ImportsPage() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [importData, setImportData] = useState<ImportItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-
-  const importStatusData = [];
 
   const debouncedSearch = useDebounce<string>(searchQuery, 300);
 
-  // Função para buscar importações
   const fetchImports = useCallback(async () => {
+    // Em desenvolvimento, usa dados mock se não houver sessão ou se NODE_ENV for "development"
+    if (process.env.NODE_ENV === "development" || !session?.user) {
+      setImportData(mockImports);
+      setIsLoading(false);
+      return;
+    }
+
     const headers = {
-      ...(session?.user?.type === "company" 
+      ...(session.user.type === "company"
         ? { "company-id": session.user.id }
-        : { "user-id": session?.user?.id }
-      )
+        : { "user-id": session.user.id }
+      ),
     };
     setIsLoading(true);
     try {
-      const response = await fetch("/api/imports");
+      const response = await fetch("/api/imports", {
+        headers: new Headers(headers),
+      });
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch imports: ${response.status} - ${errorText}`);
@@ -90,15 +120,14 @@ export default function ImportsPage() {
         status: item.status as ImportItem["status"],
         origin: item.origin,
         destination: item.destination,
-        eta: item.eta,
-        lastUpdated: new Date(item.lastUpdated).toLocaleString(),
+        eta: item.eta ?? undefined,
+        lastUpdated: new Date(item.lastUpdated || item.createdAt).toLocaleString(),
         progress: item.progress,
         createdAt: item.createdAt || new Date().toISOString(),
       }));
       setImportData(formattedData);
     } catch (error) {
       console.error("Error fetching imports:", error);
-      // Usar dados mockados como fallback até a API estar funcionando
       setImportData(mockImports);
       toast({
         title: "Error fetching imports",
@@ -108,16 +137,14 @@ export default function ImportsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session]);
 
-  // Efeito para carregar os dados iniciais e configurar polling
   useEffect(() => {
     fetchImports();
-    const pollingInterval = setInterval(fetchImports, 60000); // Atualiza a cada 1 minuto
+    const pollingInterval = setInterval(fetchImports, 60000);
     return () => clearInterval(pollingInterval);
   }, [fetchImports]);
 
-  // Filtragem dos dados
   const filteredImports = useMemo(() => {
     return importData.filter((item) => {
       const matchesSearch =
@@ -145,62 +172,8 @@ export default function ImportsPage() {
     });
   }, [importData, debouncedSearch, statusFilter, dateFilter]);
 
-  // Função para navegar para detalhes de uma importação
-  const handleImportClick = useCallback(
-    (id: string) => router.push(`/dashboard/imports/${id}`),
-    [router]
-  );
+  const handleImportClick = useCallback((id: string) => router.push(`/dashboard/imports/${id}`), [router]);
 
-  // Função para criar uma nova importação
-  const handleNewImport = useCallback(async () => {
-    setIsCreating(true);
-    try {
-      if (!session?.user) {
-        throw new Error("Acesso não autorizado");
-      }
-  
-      const isCompany = session.user.type === "company";
-      const headers = {
-        "Content-Type": "application/json",
-        ...(isCompany 
-          ? { "company-id": session.user.id }
-          : { "user-id": session.user.id }
-        )
-      };
-  
-      const response = await fetch("/api/imports", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          title: "Nova Importação",
-          origin: "Local padrão",
-          destination: "Destino padrão",
-          status: "draft",
-          progress: 0
-        }),
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha na criação');
-      }
-  
-      const newImport = await response.json();
-      router.push(`/dashboard/imports/${newImport.importId}`);
-      
-    } catch (error) {
-      console.error("Error creating import:", error);
-      toast({
-        title: "Erro na criação",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  }, [router, session]);
-
-  // Limpar filtros
   const clearFilters = useCallback(() => {
     setSearchQuery("");
     setStatusFilter("all");
@@ -209,8 +182,18 @@ export default function ImportsPage() {
 
   const hasActiveFilters = searchQuery || statusFilter !== "all" || dateFilter !== "all";
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="bg-white/5 rounded-lg p-5 border border-white/10 h-64" />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <DashboardLayout>
+    <div>
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -222,7 +205,7 @@ export default function ImportsPage() {
               <Calendar className="h-4 w-4 mr-2" />
               {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
             </Button>
-            <ImportButton onImport={handleNewImport} isLoading={isCreating} />
+            <NewImportModal />
           </div>
         </div>
       </div>
@@ -274,6 +257,7 @@ export default function ImportsPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-white/10 backdrop-blur-lg border-white/10">
                     <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                     <SelectItem value="customs">In Customs</SelectItem>
@@ -312,13 +296,7 @@ export default function ImportsPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="bg-white/5 rounded-lg p-5 border border-white/10 h-64" />
-          ))}
-        </div>
-      ) : filteredImports.length > 0 ? (
+      {filteredImports.length > 0 ? (
         <>
           <div className="flex justify-between items-center mb-4">
             <div className="text-white/60">
@@ -373,10 +351,10 @@ export default function ImportsPage() {
               Clear All Filters
             </Button>
           ) : (
-            <ImportButton onImport={handleNewImport} isLoading={isCreating} />
+            <NewImportModal />
           )}
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 }

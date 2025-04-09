@@ -1,37 +1,41 @@
-import { NextAuthOptions, SessionStrategy, User, Account, Profile, DefaultSession } from "next-auth";
+// lib/auth.ts
+import { type NextAuthOptions, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { companies, users } from "./schema";
 import { eq } from "drizzle-orm";
-import { getToken} from "next-auth/jwt";
-import { NextRequest } from "next/server";
+import { type JWT } from "next-auth/jwt";
 
+// Definimos nosso tipo customizado para o usuário
+export interface CustomUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  type: "user" | "company"; // Sempre obrigatório
+  companyId?: string;
+}
+
+// Estendemos os tipos do NextAuth para incluir nossas propriedades customizadas
 declare module "next-auth" {
-  interface User {
-    type?: "user" | "company";
-    companyId?: string;
-  }
-
   interface Session {
-    user: {
-      id: string;
-      type?: "user" | "company";
-      companyId?: string;
-    } & DefaultSession["user"];
+    user: CustomUser;
   }
+  interface User extends CustomUser {} // Extendemos User para ser compatível com CustomUser
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    type?: "user" | "company";
+    type: "user" | "company"; // Consistente com CustomUser
     companyId?: string;
+    email?: string | null; // Adicionado para compatibilidade
+    name?: string | null; // Adicionado para compatibilidade
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET!,
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -39,83 +43,81 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+      async authorize(credentials): Promise<CustomUser | null> {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, credentials.email))
-          .limit(1);
+        try {
+          // Busca usuário
+          const userResult = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, credentials.email))
+            .limit(1);
 
-        const [company] = await db
-          .select()
-          .from(companies)
-          .where(eq(companies.corporateEmail, credentials.email))
-          .limit(1);
+          // Busca empresa se não encontrar usuário
+          const companyResult =
+            userResult.length === 0
+              ? await db
+                  .select()
+                  .from(companies)
+                  .where(eq(companies.corporateEmail, credentials.email))
+                  .limit(1)
+              : [];
 
-        const entity = user || company;
-        if (!entity) return null;
+          const entity = userResult[0] || companyResult[0];
+          if (!entity) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, entity.password);
-        if (!isValid) return null;
+          const isValid = await bcrypt.compare(credentials.password, entity.password);
+          if (!isValid) return null;
 
-        return {
-          id: entity.id.toString(),
-          name: user ? `${user.firstName} ${user.lastName}` : company.name,
-          email: credentials.email,
-          type: user ? 'user' : 'company',
-          companyId: company?.id?.toString()
-        } as User;
+          return {
+            id: entity.id.toString(),
+            name: userResult[0]
+              ? `${userResult[0].firstName} ${userResult[0].lastName}`
+              : companyResult[0]?.name,
+            email: credentials.email,
+            type: userResult[0] ? "user" : "company",
+            companyId: companyResult[0]?.id?.toString(),
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
+          return null;
+        }
       },
     }),
   ],
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-       secure: false
-      },
-    },
-  },
-  pages: {
-    signIn: "/auth/login",
-    error: '/auth/error'
-  },
-  session: {
-    strategy: "jwt" as SessionStrategy,
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.type = user.type;
+        token.companyId = user.companyId;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.type = token.type as 'user' | 'company';
+      if (token) {
+        session.user = {
+          id: token.id,
+          type: token.type,
+          companyId: token.companyId,
+          email: token.email,
+          name: token.name,
+        };
+      }
       return session;
-    }
-  }
+    },
+  },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 dias
+  },
 };
-
-export async function verifyAuth(req: NextRequest) {
-  try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET! });
-    
-    if (!token?.id) return null;
-
-    return {
-      userId: token.id,
-      companyId: token.type === "company" ? token.companyId : null
-    };
-  } catch (error) {
-    console.error("Auth verification failed:", error);
-    return null;
-  }
-}

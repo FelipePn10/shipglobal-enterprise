@@ -3,9 +3,16 @@ import { db } from "@/lib/db";
 import { imports } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+// Definimos explicitamente o tipo do contexto da rota dinâmica
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
+export async function GET(request: Request, context: RouteParams) {
   try {
-    const { id } = await params;
+    const { id } = context.params; // Acessamos os params diretamente do contexto tipado
     const importData = await db
       .select()
       .from(imports)
@@ -22,3 +29,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Failed to fetch import" }, { status: 500 });
   }
 }
+
+export const dynamic = "force-dynamic"; 

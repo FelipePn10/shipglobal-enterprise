@@ -1,22 +1,27 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
 
 interface ImportStatusCardProps {
-  importId: string
-  title: string
-  status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue"
-  origin: string
-  destination: string
-  eta?: string
-  lastUpdated: string
-  progress?: number
-  className?: string
-  onClick?: () => void
+  importId: string;
+  title: string;
+  status: "pending" | "processing" | "customs" | "shipping" | "delivered" | "issue" | "draft"; // Adicionado "draft"
+  origin: string;
+  destination: string;
+  eta?: string | null; // Ajustado para aceitar null
+  lastUpdated: string;
+  progress?: number;
+  className?: string;
+  onClick?: () => void;
 }
 
 export default function ImportStatusCard({
@@ -34,47 +39,51 @@ export default function ImportStatusCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
       case "processing":
-        return "bg-blue-500/20 text-blue-300 border-blue-500/30"
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
       case "customs":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30"
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30";
       case "shipping":
-        return "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
+        return "bg-indigo-500/20 text-indigo-300 border-indigo-500/30";
       case "delivered":
-        return "bg-green-500/20 text-green-300 border-green-500/30"
+        return "bg-green-500/20 text-green-300 border-green-500/30";
       case "issue":
-        return "bg-red-500/20 text-red-300 border-red-500/30"
+        return "bg-red-500/20 text-red-300 border-red-500/30";
+      case "draft":
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30"; // Adicionado suporte para "draft"
       default:
-        return "bg-gray-500/20 text-gray-300 border-gray-500/30"
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30";
     }
-  }
+  };
 
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
-        return "Pending"
+        return "Pending";
       case "processing":
-        return "Processing"
+        return "Processing";
       case "customs":
-        return "In Customs"
+        return "In Customs";
       case "shipping":
-        return "Shipping"
+        return "Shipping";
       case "delivered":
-        return "Delivered"
+        return "Delivered";
       case "issue":
-        return "Issue Detected"
+        return "Issue Detected";
+      case "draft":
+        return "Draft"; // Adicionado texto para "draft"
       default:
-        return status
+        return status;
     }
-  }
+  };
 
   return (
     <div
       className={cn(
         "bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/[0.07] transition-colors",
         onClick && "cursor-pointer",
-        className,
+        className
       )}
       onClick={onClick}
       role={onClick ? "button" : undefined}
@@ -143,6 +152,5 @@ export default function ImportStatusCard({
         </div>
       </div>
     </div>
-  )
+  );
 }
-
