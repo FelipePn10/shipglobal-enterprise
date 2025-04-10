@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ImportStatusCard from "@/components/dashboard/import-status-card";
 import { Button } from "@/components/ui/button";
-import { Package, Search, Calendar, Filter, X } from "lucide-react";
+import { Package, Search, Calendar, Filter, X, Package2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
-import { NewImportModal } from "./new-importal-modal";
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
 
 // Hook de debounce personalizado
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -86,6 +86,7 @@ export default function ImportsPage() {
   const [importData, setImportData] = useState<ImportItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showImportPage, setShowImportPage] = useState<boolean>(false);
 
   const debouncedSearch = useDebounce<string>(searchQuery, 300);
 
@@ -192,23 +193,32 @@ export default function ImportsPage() {
     );
   }
 
+
+
   return (
-    <div>
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Imports</h1>
-            <p className="text-white/60 mt-1">Manage and track all your import shipments</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">
-              <Calendar className="h-4 w-4 mr-2" />
-              {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
-            </Button>
-            <NewImportModal />
+    <DashboardLayout>
+      <div>
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Imports</h1>
+              <p className="text-white/60 mt-1">Manage and track all your import shipments</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">
+                <Calendar className="h-4 w-4 mr-2" />
+                {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white"
+                onClick={() => setShowImportPage(true)}
+              >
+                <Package2 className="h-4 w-4 mr-2" />
+                New Import
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="mb-6">
         <div className="bg-white/5 rounded-lg p-4 border border-white/10">
@@ -334,27 +344,34 @@ export default function ImportsPage() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="h-20 w-20 text-white/20 mb-6" />
-          <h3 className="text-2xl font-medium text-white mb-3">No imports found</h3>
-          <p className="text-white/60 max-w-md mb-6">
-            {hasActiveFilters
-              ? "Try adjusting your search or filters to find what you're looking for."
-              : "You don't have any imports yet. Create your first import to get started."}
-          </p>
-          {hasActiveFilters ? (
-            <Button
-              onClick={clearFilters}
-              variant="outline"
-              className="border-white/10 text-white/80 hover:bg-white/5"
-            >
-              Clear All Filters
-            </Button>
-          ) : (
-            <NewImportModal />
-          )}
-        </div>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Package className="h-20 w-20 text-white/20 mb-6" />
+            <h3 className="text-2xl font-medium text-white mb-3">No imports found</h3>
+            <p className="text-white/60 max-w-md mb-6">
+              {hasActiveFilters
+                ? "Try adjusting your search or filters to find what you're looking for."
+                : "You don't have any imports yet. Create your first import to get started."}
+            </p>
+            {hasActiveFilters ? (
+              <Button
+                onClick={clearFilters}
+                variant="outline"
+                className="border-white/10 text-white/80 hover:bg-white/5"
+              >
+                Clear All Filters
+              </Button>
+            ) : (
+              <Button 
+                className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white"
+                onClick={() => setShowImportPage(true)}
+              >
+                <Package2 className="h-4 w-4 mr-2" />
+                Create Your First Import
+              </Button>
+            )}
+          </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }
