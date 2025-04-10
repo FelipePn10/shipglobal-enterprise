@@ -30,15 +30,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-
-import { type ImportFormValues, importFormSchema } from "../../../../types/types";
-import { popularCountries, productCategories } from "../../../../data/data";
-
 import { PersonalInfoForm } from "@/components/imports/personal-info-form";
 import { ProductInfoForm } from "@/components/imports/product-info-form";
 import { TermsCheckbox } from "@/components/imports/terms-checkbox";
 import { ShippingAddressForm } from "@/components/imports/shipping-addres-form";
 import { PaymentMethodSelector } from "@/components/imports/payment-method-selector";
+import { popularCountries, productCategories } from "@/data/data";
+import { ImportFormValues, importFormSchema } from "@/types/types";
 
 export default function ImportPage() {
   const [step, setStep] = useState<"details" | "address" | "product" | "payment" | "review" | "confirmation">("details");
@@ -298,12 +296,12 @@ export default function ImportPage() {
   };
 
   const getCountryName = (countryCode: string) => {
-    const country = popularCountries.find((c) => c.value === countryCode);
+    const country = popularCountries.find((c: { value: string; label: string }) => c.value === countryCode);
     return country ? country.label : countryCode;
   };
 
   const getCategoryName = (categoryCode: string) => {
-    const category = productCategories.find((c) => c.value === categoryCode);
+    const category = productCategories.find((c: { value: string; label: string }) => c.value === categoryCode);
     return category ? category.label : categoryCode;
   };
 
@@ -742,7 +740,7 @@ export default function ImportPage() {
                             <Separator className="my-2 bg-white/10" />
                             <div className="flex justify-between font-medium">
                               <dt>Total:</dt>
-                              <dd>{formatCurrency((calculateTotal(form.getValues("productValue") || "0", form.getValues("externalPaymentMethod") || "") * 1.05).toString())}</dd>
+                              <dd>{formatCurrency((calculateTotal(form.getValues("productValue") || "0", form.getValues("externalPaymentMethod") || "balance") * 1.05).toString())}</dd>
                             </div>
                           </dl>
                         </CardContent>
@@ -805,7 +803,7 @@ export default function ImportPage() {
                       
                       <div className="flex justify-between mb-3">
                         <span className="text-white/70">Total Value:</span>
-                        <span>{formatCurrency((calculateTotal(form.getValues("productValue") || "0", form.getValues("externalPaymentMethod") || "") * 1.05).toString())}</span>
+                        <span>{formatCurrency((calculateTotal(form.getValues("productValue") || "0", form.getValues("externalPaymentMethod") || "balance") * 1.05).toString())}</span>
                       </div>
                       
                       <div className="flex justify-between">
