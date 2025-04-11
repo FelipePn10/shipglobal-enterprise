@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -339,9 +340,9 @@ export default function ImportPage() {
     return (
       <div className="relative mb-10 px-6 md:px-12">
         {/* Progress bar underneath */}
-        <div className="absolute top-5 left-0 right-0 h-1 bg-gray-800 mx-6 md:mx-12 rounded-full">
+        <div className="absolute top-5 left-0 right-0 h-1 bg-zinc-800 mx-6 md:mx-12 rounded-full">
           <div
-            className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
@@ -366,10 +367,10 @@ export default function ImportPage() {
                   className={cn(
                     "h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300",
                     isActive
-                      ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-purple-500/20 scale-110"
+                      ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-110"
                       : "",
-                    isPast ? "bg-purple-500 text-white" : "",
-                    isFuture ? "bg-gray-800 text-gray-400" : "",
+                    isPast ? "bg-purple-600 text-white" : "",
+                    isFuture ? "bg-zinc-800 text-gray-400" : "",
                   )}
                 >
                   {isPast ? <Check className="h-5 w-5" /> : s.icon}
@@ -387,21 +388,21 @@ export default function ImportPage() {
     if (step === "confirmation") return null
 
     return (
-      <div className="hidden lg:block w-96 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-gray-800/50 overflow-auto">
-        <div className="sticky top-0 z-10 bg-gradient-to-b from-gray-900 to-gray-900/95 backdrop-blur-sm p-6 border-b border-gray-800/50">
+      <div className="hidden lg:block w-96 bg-[#121212] border-r border-zinc-800/50 overflow-auto">
+        <div className="sticky top-0 z-10 bg-[#121212]/95 backdrop-blur-sm p-6 border-b border-zinc-800/50">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 flex items-center justify-center">
               <Globe className="h-5 w-5 text-white" />
             </div>
             <h2 className="text-xl font-bold">Import Assistant</h2>
           </div>
-          <p className="text-gray-400 text-sm">Complete your import request in a few simple steps</p>
+          <p className="text-zinc-400 text-sm">Complete your import request in a few simple steps</p>
         </div>
 
         <div className="p-6 space-y-6">
           <div className="space-y-4">
             <h3 className="text-lg font-medium flex items-center">
-              <div className="h-6 w-6 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center mr-2">
+              <div className="h-6 w-6 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 flex items-center justify-center mr-2">
                 <span className="text-xs font-bold text-white">
                   {step === "details"
                     ? "1"
@@ -421,19 +422,19 @@ export default function ImportPage() {
               {step === "review" && "Final Review"}
             </h3>
 
-            <div className="bg-gray-800/30 rounded-xl p-5 border border-gray-700/50">
+            <div className="bg-zinc-900/70 rounded-xl p-5 border border-zinc-800/50">
               {step === "details" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-zinc-300">
                     Please provide your personal information for customs documentation. Make sure it matches your
                     official ID.
                   </p>
 
-                  <div className="flex items-start space-x-3 bg-gray-800/50 p-3 rounded-lg">
-                    <AlertCircle className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start space-x-3 bg-zinc-800/30 p-3 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-pink-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-white">Important</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         Your CPF number is required for all international imports to Brazil and must match the
                         recipient's identification.
                       </p>
@@ -444,15 +445,15 @@ export default function ImportPage() {
 
               {step === "address" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-zinc-300">
                     Enter the address where you want your imported items to be delivered.
                   </p>
 
-                  <div className="flex items-start space-x-3 bg-gray-800/50 p-3 rounded-lg">
-                    <AlertCircle className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start space-x-3 bg-zinc-800/30 p-3 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-pink-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-white">Delivery Information</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         For apartment buildings, include your unit number in the complement field to ensure accurate
                         delivery.
                       </p>
@@ -463,7 +464,7 @@ export default function ImportPage() {
 
               {step === "product" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-zinc-300">
                     Provide details about the product you want to import. The category affects import taxes and
                     regulations.
                   </p>
@@ -481,17 +482,17 @@ export default function ImportPage() {
                         <h4 className="font-medium">{getCountryName(originCountry)}</h4>
                       </div>
 
-                      <div className="space-y-2 bg-gray-800/50 p-3 rounded-lg">
+                      <div className="space-y-2 bg-zinc-800/30 p-3 rounded-lg">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Shipping time:</span>
+                          <span className="text-zinc-400">Shipping time:</span>
                           <span className="text-white">14-21 days</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Import tax:</span>
+                          <span className="text-zinc-400">Import tax:</span>
                           <span className="text-white">~18% of value</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Customs clearance:</span>
+                          <span className="text-zinc-400">Customs clearance:</span>
                           <span className="text-white">3-5 days</span>
                         </div>
                       </div>
@@ -502,34 +503,34 @@ export default function ImportPage() {
 
               {step === "payment" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-zinc-300">
                     Choose how you would like to pay for your import. Different methods have different processing fees.
                   </p>
 
                   {productValue && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium">Cost Breakdown</h4>
-                      <div className="space-y-2 bg-gray-800/50 p-3 rounded-lg">
+                      <div className="space-y-2 bg-zinc-800/30 p-3 rounded-lg">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Product Value:</span>
+                          <span className="text-zinc-400">Product Value:</span>
                           <span className="text-white">{formatCurrency(productValue)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Service Fee (5%):</span>
+                          <span className="text-zinc-400">Service Fee (5%):</span>
                           <span className="text-white">
                             {formatCurrency((Number.parseFloat(productValue || "0") * 0.05).toString())}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Payment Fee:</span>
+                          <span className="text-zinc-400">Payment Fee:</span>
                           <span className="text-white">
                             {formatCurrency(calculateFees(productValue || "0", externalPaymentMethod || "").toString())}
                           </span>
                         </div>
-                        <Separator className="my-2 bg-gray-700" />
+                        <Separator className="my-2 bg-zinc-700" />
                         <div className="flex justify-between text-sm font-medium">
                           <span>Total:</span>
-                          <span className="text-gradient bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">
+                          <span className="text-gradient bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                             {formatCurrency(
                               (calculateTotal(productValue || "0", externalPaymentMethod || "") * 1.05).toString(),
                             )}
@@ -543,15 +544,15 @@ export default function ImportPage() {
 
               {step === "review" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-zinc-300">
                     Please review all your information before completing your import request.
                   </p>
 
-                  <div className="flex items-start space-x-3 bg-gray-800/50 p-3 rounded-lg">
-                    <AlertCircle className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start space-x-3 bg-zinc-800/30 p-3 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-pink-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-white">Final Review</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         After submission, changing details may require contacting customer support.
                       </p>
                     </div>
@@ -562,20 +563,20 @@ export default function ImportPage() {
           </div>
 
           <div className="mt-auto">
-            <div className="p-5 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl border border-gray-700/50">
+            <div className="p-5 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
               <div className="flex items-center mb-3">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 flex items-center justify-center mr-3">
+                <div className="h-8 w-8 rounded-full bg-purple-500/20 flex items-center justify-center mr-3">
                   <HelpCircle className="h-4 w-4 text-purple-400" />
                 </div>
                 <h3 className="font-medium">Need Help?</h3>
               </div>
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-zinc-400 mb-4">
                 Our support team is available 24/7 to assist you with any questions about your import.
               </p>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 text-white"
+                className="w-full border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700/50 text-white"
               >
                 Contact Support
               </Button>
@@ -589,11 +590,11 @@ export default function ImportPage() {
   const renderPageContent = () => {
     return (
       <div className="flex-1 flex flex-col">
-        <div className="border-b border-gray-800/50 px-6 py-4 flex items-center bg-gray-900/80 backdrop-blur-sm sticky top-0 z-20">
+        <div className="border-b border-zinc-800/50 px-6 py-4 flex items-center bg-[#121212]/80 backdrop-blur-sm sticky top-0 z-20">
           <Button
             variant="ghost"
             size="sm"
-            className="mr-4 text-gray-400 hover:text-white hover:bg-gray-800/50"
+            className="mr-4 text-zinc-400 hover:text-white hover:bg-zinc-800/50"
             onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -608,12 +609,12 @@ export default function ImportPage() {
 
           {step !== "confirmation" && (
             <div className="hidden md:flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-400">Completion: {progressPercentage}%</span>
+              <span className="text-sm font-medium text-zinc-400">Completion: {progressPercentage}%</span>
               <div className="w-32">
                 <Progress
                   value={progressPercentage}
-                  className="h-2 bg-gray-800"
-                  indicatorClassName="bg-gradient-to-r from-cyan-500 to-purple-500"
+                  className="h-2 bg-zinc-800"
+                  indicatorClassName="bg-gradient-to-r from-purple-600 to-pink-500"
                 />
               </div>
             </div>
@@ -630,10 +631,10 @@ export default function ImportPage() {
                   <div className="space-y-6 max-w-2xl mx-auto py-8 animate-fadeIn">
                     <div>
                       <h2 className="text-2xl font-semibold mb-2">Personal Information</h2>
-                      <p className="text-gray-400 text-sm">Fill in your personal details for import documents</p>
+                      <p className="text-zinc-400 text-sm">Fill in your personal details for import documents</p>
                     </div>
 
-                    <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                    <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                       <CardContent className="pt-6">
                         <PersonalInfoForm control={form.control} formatCPF={formatCPF} />
                       </CardContent>
@@ -645,10 +646,10 @@ export default function ImportPage() {
                   <div className="space-y-6 max-w-2xl mx-auto py-8 animate-fadeIn">
                     <div>
                       <h2 className="text-2xl font-semibold mb-2">Shipping Address</h2>
-                      <p className="text-gray-400 text-sm">Where should we deliver your import?</p>
+                      <p className="text-zinc-400 text-sm">Where should we deliver your import?</p>
                     </div>
 
-                    <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                    <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                       <CardContent className="pt-6">
                         <ShippingAddressForm control={form.control} formatZipCode={formatZipCode} />
                       </CardContent>
@@ -660,10 +661,10 @@ export default function ImportPage() {
                   <div className="space-y-6 max-w-2xl mx-auto py-8 animate-fadeIn">
                     <div>
                       <h2 className="text-2xl font-semibold mb-2">Product Information</h2>
-                      <p className="text-gray-400 text-sm">Tell us about the item you're importing</p>
+                      <p className="text-zinc-400 text-sm">Tell us about the item you're importing</p>
                     </div>
 
-                    <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                    <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                       <CardContent className="pt-6">
                         <ProductInfoForm control={form.control} getCountryFlag={getCountryFlag} />
                       </CardContent>
@@ -674,11 +675,11 @@ export default function ImportPage() {
                 {step === "payment" && (
                   <div className="space-y-6 max-w-2xl mx-auto py-8 animate-fadeIn">
                     <div>
-                      <h2 className="text-2xl font-semibold mb-2">Payment Method</h2>
-                      <p className="text-gray-400 text-sm">Select how you'd like to pay for your import</p>
+                      <h2 className="text-2xl font-bold font-white mb-2">Payment Method</h2>
+                      <p className="text-zinc-400 text-sm font-white">Select how you'd like to pay for your import</p>
                     </div>
 
-                    <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                    <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                       <CardContent className="pt-6">
                         <PaymentMethodSelector
                           control={form.control}
@@ -697,71 +698,71 @@ export default function ImportPage() {
                   <div className="space-y-6 max-w-2xl mx-auto py-8 animate-fadeIn">
                     <div>
                       <h2 className="text-2xl font-semibold mb-2">Review Your Import</h2>
-                      <p className="text-gray-400 text-sm">Please check all details before finalizing</p>
+                      <p className="text-zinc-400 text-sm">Please check all details before finalizing</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
-                      <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                      <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                         <CardContent className="pt-6">
                           <h3 className="text-lg font-medium mb-4 flex items-center">
-                            <User className="h-4 w-4 mr-2 text-cyan-400" />
+                            <User className="h-4 w-4 mr-2 text-pink-400" />
                             Personal Information
                           </h3>
                           <dl className="space-y-3">
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Name:</dt>
+                              <dt className="text-zinc-400">Name:</dt>
                               <dd className="font-medium">{form.getValues("fullName") || "Not provided"}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">CPF:</dt>
+                              <dt className="text-zinc-400">CPF:</dt>
                               <dd className="font-medium">{form.getValues("cpf") || "Not provided"}</dd>
                             </div>
                           </dl>
 
                           <h3 className="text-lg font-medium mt-6 mb-4 flex items-center">
-                            <MapPin className="h-4 w-4 mr-2 text-cyan-400" />
+                            <MapPin className="h-4 w-4 mr-2 text-pink-400" />
                             Shipping Address
                           </h3>
                           <dl className="space-y-3">
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Street:</dt>
+                              <dt className="text-zinc-400">Street:</dt>
                               <dd className="font-medium">{form.getValues("address.street") || "Not provided"}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Number:</dt>
+                              <dt className="text-zinc-400">Number:</dt>
                               <dd className="font-medium">{form.getValues("address.number") || "Not provided"}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">City:</dt>
+                              <dt className="text-zinc-400">City:</dt>
                               <dd className="font-medium">{form.getValues("address.city") || "Not provided"}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">State:</dt>
+                              <dt className="text-zinc-400">State:</dt>
                               <dd className="font-medium">{form.getValues("address.state") || "Not provided"}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">ZIP Code:</dt>
+                              <dt className="text-zinc-400">ZIP Code:</dt>
                               <dd className="font-medium">{form.getValues("address.zipCode") || "Not provided"}</dd>
                             </div>
                           </dl>
                         </CardContent>
                       </Card>
 
-                      <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                      <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                         <CardContent className="pt-6">
                           <h3 className="text-lg font-medium mb-4 flex items-center">
-                            <Package2 className="h-4 w-4 mr-2 text-cyan-400" />
+                            <Package2 className="h-4 w-4 mr-2 text-pink-400" />
                             Product Details
                           </h3>
                           <dl className="space-y-3">
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Category:</dt>
+                              <dt className="text-zinc-400">Category:</dt>
                               <dd className="font-medium">
                                 {getCategoryName(form.getValues("productCategory")) || "Not selected"}
                               </dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Origin:</dt>
+                              <dt className="text-zinc-400">Origin:</dt>
                               <dd className="flex items-center font-medium">
                                 {form.getValues("originCountry") && (
                                   <img
@@ -774,13 +775,13 @@ export default function ImportPage() {
                               </dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Value:</dt>
+                              <dt className="text-zinc-400">Value:</dt>
                               <dd className="font-medium">
                                 {formatCurrency(form.getValues("productValue")) || "Not provided"}
                               </dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Product Link:</dt>
+                              <dt className="text-zinc-400">Product Link:</dt>
                               <dd className="truncate max-w-[200px] font-medium">
                                 {form.getValues("productLink") || "Not provided"}
                               </dd>
@@ -788,24 +789,24 @@ export default function ImportPage() {
                           </dl>
 
                           <h3 className="text-lg font-medium mt-6 mb-4 flex items-center">
-                            <CreditCard className="h-4 w-4 mr-2 text-cyan-400" />
+                            <CreditCard className="h-4 w-4 mr-2 text-pink-400" />
                             Payment Information
                           </h3>
                           <dl className="space-y-3">
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Method:</dt>
-                              <dd className="capitalize font-medium">
+                              <dt className="text-zinc-400">Method:</dt>
+                              <dd className="capitalize font-medium font-white font-bold">
                                 {form.getValues("paymentMethod") === "balance"
                                   ? "Account Balance"
                                   : form.getValues("externalPaymentMethod")}
                               </dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Subtotal:</dt>
+                              <dt className="text-zinc-400">Subtotal:</dt>
                               <dd className="font-medium">{formatCurrency(form.getValues("productValue"))}</dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Service Fee (5%):</dt>
+                              <dt className="text-zinc-400">Service Fee (5%):</dt>
                               <dd className="font-medium">
                                 {formatCurrency(
                                   (Number.parseFloat(form.getValues("productValue") || "0") * 0.05).toString(),
@@ -813,7 +814,7 @@ export default function ImportPage() {
                               </dd>
                             </div>
                             <div className="flex justify-between">
-                              <dt className="text-gray-400">Payment Fee:</dt>
+                              <dt className="text-zinc-400">Payment Fee:</dt>
                               <dd className="font-medium">
                                 {formatCurrency(
                                   calculateFees(
@@ -823,10 +824,10 @@ export default function ImportPage() {
                                 )}
                               </dd>
                             </div>
-                            <Separator className="my-2 bg-gray-700" />
+                            <Separator className="my-2 bg-zinc-700" />
                             <div className="flex justify-between font-medium">
                               <dt>Total:</dt>
-                              <dd className="text-gradient bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent text-lg">
+                              <dd className="text-gradient bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent text-lg">
                                 {formatCurrency(
                                   (
                                     calculateTotal(
@@ -841,10 +842,10 @@ export default function ImportPage() {
                         </CardContent>
                       </Card>
                     </div>
-                    <Card className="border-gray-800/50 bg-gray-900/50 shadow-lg">
+                    <Card className="border-zinc-800/50 bg-zinc-900/30 shadow-lg">
                       <CardContent className="pt-6">
                         <h3 className="text-lg font-medium mb-4 flex items-center">
-                          <Info className="h-4 w-4 mr-2 text-cyan-400" />
+                          <Info className="h-4 w-4 mr-2 text-pink-400" />
                           Terms & Conditions
                         </h3>
                         <TermsCheckbox control={form.control} />
@@ -852,7 +853,7 @@ export default function ImportPage() {
                         <Alert className="mt-4 bg-amber-900/20 border-amber-500/30">
                           <AlertCircle className="h-4 w-4 text-amber-400" />
                           <AlertTitle>Important Notice</AlertTitle>
-                          <AlertDescription className="text-sm text-gray-300">
+                          <AlertDescription className="text-sm text-zinc-300">
                             By proceeding, you confirm all information is accurate and agree to our import terms and
                             conditions.
                           </AlertDescription>
@@ -864,36 +865,36 @@ export default function ImportPage() {
 
                 {step === "confirmation" && (
                   <div className="flex flex-col items-center justify-center py-12 px-4 max-w-2xl mx-auto text-center animate-fadeIn">
-                    <div className="h-24 w-24 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center mb-8 shadow-lg shadow-purple-500/20">
+                    <div className="h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-8 shadow-lg shadow-purple-500/20">
                       <CheckCircle2 className="h-12 w-12 text-white" />
                     </div>
 
                     <h2 className="text-3xl font-bold mb-3">Import Successfully Created!</h2>
-                    <p className="text-gray-400 mb-8 max-w-md">
+                    <p className="text-zinc-400 mb-8 max-w-md">
                       Your import request has been registered and is now being processed. You can track its progress in
                       your dashboard.
                     </p>
 
-                    <div className="w-full max-w-md bg-gray-900/50 border border-gray-800/50 rounded-lg p-6 mb-8 shadow-lg">
+                    <div className="w-full max-w-md bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-6 mb-8 shadow-lg">
                       <h3 className="font-medium mb-4 flex items-center">
-                        <Package2 className="h-4 w-4 mr-2 text-cyan-400" />
+                        <Package2 className="h-4 w-4 mr-2 text-pink-400" />
                         Import Summary
                       </h3>
 
                       <div className="flex justify-between mb-3">
-                        <span className="text-gray-400">Import ID:</span>
-                        <span className="font-mono bg-gray-800 px-2 py-0.5 rounded text-cyan-400">
+                        <span className="text-zinc-400">Import ID:</span>
+                        <span className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-pink-400">
                           #IMP{Math.floor(100000 + Math.random() * 900000)}
                         </span>
                       </div>
 
                       <div className="flex justify-between mb-3">
-                        <span className="text-gray-400">Product:</span>
+                        <span className="text-zinc-400">Product:</span>
                         <span>{getCategoryName(form.getValues("productCategory"))}</span>
                       </div>
 
                       <div className="flex justify-between mb-3">
-                        <span className="text-gray-400">Origin:</span>
+                        <span className="text-zinc-400">Origin:</span>
                         <span className="flex items-center">
                           {form.getValues("originCountry") && (
                             <img
@@ -907,8 +908,8 @@ export default function ImportPage() {
                       </div>
 
                       <div className="flex justify-between mb-3">
-                        <span className="text-gray-400">Total Value:</span>
-                        <span className="text-gradient bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent font-medium">
+                        <span className="text-zinc-400">Total Value:</span>
+                        <span className="text-gradient bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent font-medium">
                           {formatCurrency(
                             (
                               calculateTotal(
@@ -921,7 +922,7 @@ export default function ImportPage() {
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Status:</span>
+                        <span className="text-zinc-400">Status:</span>
                         <Badge className="bg-amber-500/20 text-amber-300 hover:bg-amber-500/30">Processing</Badge>
                       </div>
                     </div>
@@ -929,13 +930,13 @@ export default function ImportPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
                       <Button
                         variant="outline"
-                        className="border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 text-white"
+                        className="border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700/50 text-white"
                         onClick={() => router.push("/dashboard")}
                       >
                         Go to Dashboard
                       </Button>
                       <Button
-                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white"
+                        className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white"
                         onClick={() => router.push("/dashboard/imports")}
                       >
                         View My Imports
@@ -946,13 +947,13 @@ export default function ImportPage() {
               </ScrollArea>
 
               {step !== "confirmation" && (
-                <div className="p-6 border-t border-gray-800/50 flex items-center justify-between bg-gray-900/80 backdrop-blur-sm">
+                <div className="p-6 border-t border-zinc-800/50 flex items-center justify-between bg-[#121212]/80 backdrop-blur-sm">
                   {step !== "details" && (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handlePreviousStep}
-                      className="border-gray-700 text-gray-300 hover:bg-gray-800/50"
+                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800/50"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back
@@ -962,7 +963,7 @@ export default function ImportPage() {
                   <Button
                     type="button"
                     className={cn(
-                      "ml-auto bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white shadow-lg shadow-purple-500/20 transition-all duration-300",
+                      "ml-auto bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white shadow-lg shadow-purple-500/10 transition-all duration-300",
                       isSubmitting && "opacity-70 cursor-not-allowed",
                     )}
                     disabled={isSubmitting}
@@ -982,7 +983,7 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#121212] via-[#1a1a1a] to-[#121212] text-white">
       <div className="container mx-auto">
         <div className="flex min-h-screen">
           {renderSidebar()}
