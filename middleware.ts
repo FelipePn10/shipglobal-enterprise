@@ -1,23 +1,23 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { getToken } from "next-auth/jwt";
+import { NextResponse, type NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 interface CustomJWT {
   id?: string;
-  type?: "user" | "company";
+  type?: 'user' | 'company';
   companyId?: string;
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = await getToken({ 
+  const { pathname, origin } = request.nextUrl;
+
+  // Get the token from the request
+  const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
   }) as CustomJWT | null;
 
-  const headers = new Headers(request.headers);
-
-  // Rotas públicas
+  // Define public routes that don't require authentication
   const PUBLIC_ROUTES = [
     '/',
     '/auth/login',
@@ -26,32 +26,32 @@ export async function middleware(request: NextRequest) {
     '/test/public',
     '/_next/static',
     '/_next/image',
-    '/favicon.ico'
+    '/favicon.ico',
   ];
 
-  const isPublic = PUBLIC_ROUTES.some(route => 
-    route === pathname || 
-    pathname.startsWith(route)
+  const isPublicRoute = PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route)
   );
 
-  if (isPublic) {
-    return NextResponse.next({ request: { headers } });
+  // Allow public routes without authentication
+  if (isPublicRoute) {
+    return NextResponse.next();
   }
 
-  // Rota de teste pública
+  // Handle test/public route
   if (pathname === '/test/public') {
     return NextResponse.json({
       status: 'public',
       authenticated: !!token,
-      userType: token?.type
+      userType: token?.type ?? null,
     });
   }
 
-  // Rota de teste protegida
+  // Handle test/protected route
   if (pathname === '/test/protected') {
     if (!token?.id) {
       return NextResponse.json(
-        { error: "Unauthorized access" },
+        { error: 'Unauthorized access' },
         { status: 401 }
       );
     }
@@ -60,19 +60,20 @@ export async function middleware(request: NextRequest) {
       user: {
         id: token.id,
         type: token.type,
-        companyId: token.companyId
-      }
+        companyId: token.companyId ?? null,
+      },
     });
   }
 
-  // Verificação de autenticação
+  // Redirect to login for unauthenticated users
   if (!token?.id) {
-    const loginUrl = new URL('/auth/login', request.url);
+    const loginUrl = new URL('/auth/login', origin);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Adiciona headers se autenticado
+  // Add custom headers for authenticated requests
+  const headers = new Headers(request.headers);
   headers.set('user-id', token.id);
   if (token.type === 'company' && token.companyId) {
     headers.set('company-id', token.companyId);
@@ -82,5 +83,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.svg$).*)']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.svg$).*)'],
 };
