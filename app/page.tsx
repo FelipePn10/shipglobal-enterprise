@@ -8,6 +8,7 @@ import CtaSection from "@/components/sections/cta-section"
 import Footer from "@/components/sections/footer"
 import Navbar from "@/components/navigation/navbar"
 import ServiceComparisonTable from "./comparison/page"
+import DesktopAppPromo from "@/components/sections/dowload-section"
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <Navbar />
       <HeroGeometric badge="Redirex Solutions" title1="International" title2="Product Access" />
       <AboutSection />
+      <DesktopAppPromo />
       <ServiceComparisonTable />
       <HowItWorksSection />
       <BenefitsSection />
