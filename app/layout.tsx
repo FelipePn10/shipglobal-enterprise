@@ -5,7 +5,7 @@ import Providers from "@/providers/providers";
 
 
 export const metadata: Metadata = {
-  title: "ShipGlobal-Enterprise",
+  title: "Redirex-Enterprise",
   description: "",
   generator: "ShipGlboal",
 };

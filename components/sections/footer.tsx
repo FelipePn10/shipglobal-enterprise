@@ -35,8 +35,8 @@ export default function Footer() {
             viewport={{ once: true }}
           >
             <div className="flex items-center gap-2 mb-6">
-              <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={30} height={30} />
-              <span className="text-xl font-bold text-white">ShipGlobal</span>
+              <Image src="https://kokonutui.com/logo.svg" alt="Redirex Solutions" width={30} height={30} />
+              <span className="text-xl font-bold text-white">Redirex</span>
             </div>
             <p className="text-white/60 mb-6">
               Breaking down international barriers to connect you with products from around the world.
@@ -185,7 +185,7 @@ export default function Footer() {
           viewport={{ once: true }}
           className="pt-8 border-t border-white/10 text-center text-white/40 text-sm"
         >
-          <p>© {currentYear} ShipGlobal Solutions. All rights reserved.</p>
+          <p>© {currentYear} Redirex Solutions. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-6 mt-4">
             <Link href="/privacy" className="hover:text-white/60 transition-colors">
               Privacy Policy

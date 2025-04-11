@@ -97,8 +97,8 @@ export default function ForgotPasswordPage() {
             className="text-center mb-8"
           >
             <Link href="/" className="inline-flex items-center gap-2 mb-6">
-              <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={30} height={30} />
-              <span className="text-xl font-bold text-white">ShipGlobal</span>
+              <Image src="https://kokonutui.com/logo.svg" alt="Redirex Solutions" width={30} height={30} />
+              <span className="text-xl font-bold text-white">Redirex</span>
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
             <p className="text-white/60">Enter your email to receive a password reset link</p>

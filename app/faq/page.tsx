@@ -27,9 +27,9 @@ export default function FAQPage() {
       title: "General Questions",
       faqs: [
         {
-          question: "What is ShipGlobal Solutions?",
+          question: "What is Redirex Solutions?",
           answer:
-            "ShipGlobal Solutions is an international product redirection service that helps individuals and businesses access products from retailers worldwide that don't offer direct international shipping. We provide you with local addresses in multiple countries, receive your packages, and forward them to your location anywhere in the world.",
+            "Redirex Solutions is an international product redirection service that helps individuals and businesses access products from retailers worldwide that don't offer direct international shipping. We provide you with local addresses in multiple countries, receive your packages, and forward them to your location anywhere in the world.",
         },
         {
           question: "Which countries do you operate in?",

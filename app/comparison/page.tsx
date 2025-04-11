@@ -20,7 +20,7 @@ export default function ServiceComparisonTable() {
 
   const companies = [
     { 
-      name: "ShipGlobal", 
+      name: "Redirex", 
       isOurs: true, 
       tagline: "Premium Global Service",
       accentColor: "from-indigo-400 to-rose-400"

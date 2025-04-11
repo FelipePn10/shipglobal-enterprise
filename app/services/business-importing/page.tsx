@@ -61,7 +61,7 @@ export default function BusinessImportingPage() {
   const testimonials = [
     {
       quote:
-        "ShipGlobal has transformed our supply chain. We're now able to source products from international suppliers with minimal hassle and competitive shipping rates.",
+        "Redirex has transformed our supply chain. We're now able to source products from international suppliers with minimal hassle and competitive shipping rates.",
       author: "Robert M.",
       location: "CEO, TechImports Inc.",
       rating: 5,
@@ -83,7 +83,7 @@ export default function BusinessImportingPage() {
   ]
 
   const comparisonData = {
-    headers: ["Features", "Traditional Importing", "With ShipGlobal"],
+    headers: ["Features", "Traditional Importing", "With Redirex"],
     rows: [
       ["Shipping Costs", "High individual rates", "Bulk discounted rates"],
       ["Customs Handling", "Complex paperwork", "Fully managed service"],
@@ -144,7 +144,7 @@ export default function BusinessImportingPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center mb-12">
             <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
-              Traditional Importing vs. ShipGlobal
+              Traditional Importing vs. Redirex
             </h2>
             <p className="text-white/70">See how our business importing service compares to traditional methods</p>
           </div>

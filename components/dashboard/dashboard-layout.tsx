@@ -146,7 +146,7 @@ export default function DashboardLayout({ children, className }: DashboardLayout
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
       <div className="flex min-h-screen flex-col bg-black text-gray-300">
         <MinimalNavbar
-          logoText="Ship Global"
+          logoText="Redirex"
           isLoggedIn={true}
           userName={effectiveSession?.user?.name || "John Smith"}
           notifications={notifications}

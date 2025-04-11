@@ -34,7 +34,7 @@ export default function FinancialSummary({
   totalPaid, 
   totalPending, 
   className,
-  companyName = "Ship Global",
+  companyName = "Redirex",
   companyLogo
 }: FinancialSummaryProps) {
   const [timeframe, setTimeframe] = useState("month")

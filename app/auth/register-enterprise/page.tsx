@@ -593,9 +593,9 @@ export default function RegisterPage() {
           <motion.div custom={0} variants={fadeInVariants} initial="hidden" animate="visible" className="text-center mb-6">
             <Link href="/" className="inline-flex items-center gap-2 mb-5 group">
               <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-rose-500 flex items-center justify-center transition-all group-hover:scale-110">
-                <Image src="https://kokonutui.com/logo.svg" alt="ShipGlobal Solutions" width={20} height={20} className="relative z-10" />
+                <Image src="https://kokonutui.com/logo.svg" alt="Redirex Solutions" width={20} height={20} className="relative z-10" />
               </div>
-              <span className="text-xl font-bold text-white">ShipGlobal</span>
+              <span className="text-xl font-bold text-white">Redirex</span>
             </Link>
             <h1 className="text-2xl font-bold text-white mb-2">Criar Conta Empresarial</h1>
             <p className="text-white/60">Registre sua empresa para acessar nossa plataforma</p>
@@ -642,7 +642,7 @@ export default function RegisterPage() {
         
         <div className="text-center mt-6">
           <p className="text-white/40 text-xs">
-            © 2025 ShipGlobal Solutions. Todos os direitos reservados.
+            © 2025 Redirex Solutions. Todos os direitos reservados.
           </p>
         </div>
       </div>

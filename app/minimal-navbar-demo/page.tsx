@@ -23,7 +23,7 @@ export default function MinimalNavbarDemo() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black">
       <MinimalNavbar
-        logoText="Ship Global"
+        logoText="Redirex"
         isLoggedIn={isLoggedIn}
         userName={isLoggedIn ? "John Doe" : undefined}
        // onLogin={handleLogin}

@@ -35,7 +35,7 @@ interface NavbarProps {
 
 export default function Navbar({
   logo,
-  logoText = "ShipGlobal",
+  logoText = "Redirex",
   logoHref = "/",
   items = defaultNavItems,
   showAuth = true,

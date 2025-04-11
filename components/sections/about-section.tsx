@@ -56,7 +56,7 @@ export default function AboutSection() {
             >
               <h3 className="text-2xl font-semibold mb-4 text-white/90">Our Story</h3>
               <p className="text-white/70 mb-6 leading-relaxed">
-                Founded in 2015, ShipGlobal Solutions emerged from a simple vision: to break down international
+                Founded in 2015, Redirex Solutions emerged from a simple vision: to break down international
                 barriers that prevent consumers and businesses from accessing products worldwide. What began as a small
                 operation has grown into a trusted partner for thousands of clients seeking global product access.
               </p>

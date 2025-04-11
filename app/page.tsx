@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <main className="bg-[#030303] text-white">
       <Navbar />
-      <HeroGeometric badge="ShipGlobal Solutions" title1="International" title2="Product Access" />
+      <HeroGeometric badge="Redirex Solutions" title1="International" title2="Product Access" />
       <AboutSection />
       <ServiceComparisonTable />
       <HowItWorksSection />
