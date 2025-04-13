@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { type NextAuthOptions, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -7,30 +6,30 @@ import { companies, users } from "./schema";
 import { eq } from "drizzle-orm";
 import { type JWT } from "next-auth/jwt";
 
-// Definimos nosso tipo customizado para o usuário
 export interface CustomUser {
   id: string;
   name?: string | null;
   email?: string | null;
-  type: "user" | "company"; // Sempre obrigatório
+  type: "user" | "company";
   companyId?: string;
+  stripeAccountId?: string | null; // Added for Stripe Connect
 }
 
-// Estendemos os tipos do NextAuth para incluir nossas propriedades customizadas
 declare module "next-auth" {
   interface Session {
     user: CustomUser;
   }
-  interface User extends CustomUser {} // Extendemos User para ser compatível com CustomUser
+  interface User extends CustomUser {}
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    type: "user" | "company"; // Consistente com CustomUser
+    type: "user" | "company";
     companyId?: string;
-    email?: string | null; // Adicionado para compatibilidade
-    name?: string | null; // Adicionado para compatibilidade
+    email?: string | null;
+    name?: string | null;
+    stripeAccountId?: string | null;
   }
 }
 
@@ -51,7 +50,15 @@ export const authOptions: NextAuthOptions = {
         try {
           // Busca usuário
           const userResult = await db
-            .select()
+            .select({
+              id: users.id,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              email: users.email,
+              password: users.password,
+              stripeAccountId: users.stripeAccountId,
+              companyId: users.companyId,
+            })
             .from(users)
             .where(eq(users.email, credentials.email))
             .limit(1);
@@ -60,7 +67,12 @@ export const authOptions: NextAuthOptions = {
           const companyResult =
             userResult.length === 0
               ? await db
-                  .select()
+                  .select({
+                    id: companies.id,
+                    name: companies.name,
+                    corporateEmail: companies.corporateEmail,
+                    password: companies.password,
+                  })
                   .from(companies)
                   .where(eq(companies.corporateEmail, credentials.email))
                   .limit(1)
@@ -79,7 +91,8 @@ export const authOptions: NextAuthOptions = {
               : companyResult[0]?.name,
             email: credentials.email,
             type: userResult[0] ? "user" : "company",
-            companyId: companyResult[0]?.id?.toString(),
+            companyId: userResult[0]?.companyId?.toString() || companyResult[0]?.id?.toString(),
+            stripeAccountId: userResult[0]?.stripeAccountId,
           };
         } catch (error) {
           console.error("Authentication error:", error);
@@ -96,6 +109,7 @@ export const authOptions: NextAuthOptions = {
         token.companyId = user.companyId;
         token.email = user.email;
         token.name = user.name;
+        token.stripeAccountId = user.stripeAccountId;
       }
       return token;
     },
@@ -107,6 +121,7 @@ export const authOptions: NextAuthOptions = {
           companyId: token.companyId,
           email: token.email,
           name: token.name,
+          stripeAccountId: token.stripeAccountId,
         };
       }
       return session;

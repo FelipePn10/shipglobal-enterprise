@@ -1,20 +1,47 @@
-"use client"
+"use client";
 
-import { OrderItem } from "@/components/imports/checkout/order-summaray"
-import { PaymentDetails } from "@/components/imports/checkout/payment-form"
-import { ShippingDetails } from "@/components/imports/checkout/shipping-form"
-import { useState } from "react"
+import { useState } from "react";
 
+// Define types inline since components are missing
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
-// Sample product images
+export interface ShippingDetails {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  saveAddress: boolean;
+}
+
+export interface PaymentDetails {
+  paymentMethod: "credit" | "paypal";
+  creditCard: {
+    cardNumber: string;
+    cardholderName: string;
+    expiryDate: string;
+    cvv: string;
+    saveCard: boolean;
+  };
+  paypalEmail: string;
+}
+
 const productImages = [
   "/placeholder.svg?height=80&width=80",
   "/placeholder.svg?height=80&width=80",
   "/placeholder.svg?height=80&width=80",
-]
+];
 
 export function useCheckout() {
-  // Sample order items
   const [orderItems, setOrderItems] = useState<OrderItem[]>([
     {
       id: "1",
@@ -37,15 +64,13 @@ export function useCheckout() {
       quantity: 2,
       image: productImages[2],
     },
-  ])
+  ]);
 
-  // Calculate order totals
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 9.99
-  const tax = subtotal * 0.06 // 6% tax rate
-  const total = subtotal + shipping + tax
+  const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = 9.99;
+  const tax = subtotal * 0.06;
+  const total = subtotal + shipping + tax;
 
-  // State for shipping and payment details
   const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
     fullName: "",
     email: "",
@@ -56,7 +81,7 @@ export function useCheckout() {
     zipCode: "",
     country: "US",
     saveAddress: false,
-  })
+  });
 
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     paymentMethod: "credit",
@@ -68,37 +93,30 @@ export function useCheckout() {
       saveCard: false,
     },
     paypalEmail: "",
-  })
+  });
 
-  // Order processing state
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [orderNumber, setOrderNumber] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
 
-  // Process the order
   const processOrder = async () => {
-    setIsProcessing(true)
-
-    // Simulate API call to process payment and create order
+    setIsProcessing(true);
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        // Generate random order number
-        const randomOrderNum = Math.floor(100000 + Math.random() * 900000).toString()
-        setOrderNumber(randomOrderNum)
-        setIsProcessing(false)
-        resolve()
-      }, 2000)
-    })
-  }
+        const randomOrderNum = Math.floor(100000 + Math.random() * 900000).toString();
+        setOrderNumber(randomOrderNum);
+        setIsProcessing(false);
+        resolve();
+      }, 2000);
+    });
+  };
 
-  // Update item quantity
   const updateItemQuantity = (id: string, quantity: number) => {
-    setOrderItems((items) => items.map((item) => (item.id === id ? { ...item, quantity } : item)))
-  }
+    setOrderItems((items) => items.map((item) => (item.id === id ? { ...item, quantity } : item)));
+  };
 
-  // Remove item from cart
   const removeItem = (id: string) => {
-    setOrderItems((items) => items.filter((item) => item.id !== id))
-  }
+    setOrderItems((items) => items.filter((item) => item.id !== id));
+  };
 
   return {
     orderItems,
@@ -115,5 +133,5 @@ export function useCheckout() {
     isProcessing,
     processOrder,
     orderNumber,
-  }
+  };
 }

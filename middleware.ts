@@ -11,6 +11,14 @@ export async function middleware(request: NextRequest) {
   const { pathname, origin } = request.nextUrl;
 
   // Get the token from the request
+  if (process.env.NODE_ENV === 'development') {
+    const headers = new Headers(request.headers);
+    headers.set('user-id', 'dev-user-123');
+    headers.set('user-type', 'user');
+    return NextResponse.next({ request: { headers } });
+  }
+
+  // Rest of your existing middleware...
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -83,5 +91,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.svg$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth).*)'],
 };

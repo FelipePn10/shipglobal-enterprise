@@ -1,94 +1,83 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ArrowUpRight, ArrowDownRight, ArrowRightLeft, Search, X, Filter, Clock, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import type { LucideIcon } from "lucide-react"
-
-// Types
-type CurrencyCode = "USD" | "EUR" | "CNY" | "JPY"
-
-interface Transaction {
-  id: string
-  type: "deposit" | "transfer" | "withdrawal"
-  amount: number
-  currency: CurrencyCode
-  targetCurrency?: CurrencyCode
-  date: string
-  status: "completed" | "pending" | "failed"
-  description?: string
-}
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowRightLeft,
+  Search,
+  X,
+  Filter,
+  Clock,
+  ChevronDown,
+  RotateCcw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import type { LucideIcon } from "lucide-react";
+import { CurrencyCode, Transaction } from "@/types/balance";
 
 interface TransactionHistoryProps {
-  transactions: Transaction[]
-  currencies: Record<CurrencyCode, { symbol: string; name: string; icon: LucideIcon; color: string }>
+  transactions: Transaction[];
+  currencies: Record<CurrencyCode, { symbol: string; name: string; icon: LucideIcon; color: string }>;
+  onRefund: (transactionId: string, amount: number, currency: CurrencyCode, paymentIntentId?: string) => void;
 }
 
-export function TransactionHistory({ transactions, currencies }: TransactionHistoryProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [typeFilter, setTypeFilter] = useState("all")
-  const [currencyFilter, setCurrencyFilter] = useState("all")
-  const [showFilters, setShowFilters] = useState(false)
-  const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null)
+export function TransactionHistory({ transactions, currencies, onRefund }: TransactionHistoryProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
 
-  // Filter transactions
   const filteredTransactions = transactions.filter((transaction) => {
-    // Search filter
     const matchesSearch =
       transaction.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       transaction.currency.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (transaction.targetCurrency && transaction.targetCurrency.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (transaction.description && transaction.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (transaction.description && transaction.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Type filter
-    const matchesType = typeFilter === "all" || transaction.type === typeFilter
+    const matchesType = typeFilter === "all" || transaction.type === typeFilter;
 
-    // Currency filter
     const matchesCurrency =
       currencyFilter === "all" ||
       transaction.currency === currencyFilter ||
-      transaction.targetCurrency === currencyFilter
+      transaction.targetCurrency === currencyFilter;
 
-    return matchesSearch && matchesType && matchesCurrency
-  })
+    return matchesSearch && matchesType && matchesCurrency;
+  });
 
-  // Clear all filters
   const clearFilters = () => {
-    setSearchQuery("")
-    setTypeFilter("all")
-    setCurrencyFilter("all")
-  }
+    setSearchQuery("");
+    setTypeFilter("all");
+    setCurrencyFilter("all");
+  };
 
-  // Check if any filters are active
-  const hasActiveFilters = searchQuery || typeFilter !== "all" || currencyFilter !== "all"
+  const hasActiveFilters = searchQuery || typeFilter !== "all" || currencyFilter !== "all";
 
-  // Get transaction icon based on type
   const getTransactionIcon = (type: Transaction["type"]) => {
-    switch (type) {
-      case "deposit":
-        return <ArrowDownRight className="h-4 w-4 text-green-400" />
-      case "withdrawal":
-        return <ArrowUpRight className="h-4 w-4 text-red-400" />
-      case "transfer":
-        return <ArrowRightLeft className="h-4 w-4 text-blue-400" />
-    }
-  }
+    const iconMap = {
+      deposit: <ArrowDownRight className="h-4 w-4 text-green-400" />,
+      withdrawal: <ArrowUpRight className="h-4 w-4 text-red-400" />,
+      transfer: <ArrowRightLeft className="h-4 w-4 text-blue-400" />,
+      refund: <ArrowDownRight className="h-4 w-4 text-yellow-400" />,
+    };
+    return iconMap[type];
+  };
 
-  // Get transaction status badge
   const getStatusBadge = (status: Transaction["status"]) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-500/20 text-green-400 hover:bg-green-500/30">Completed</Badge>
+        return <Badge className="bg-green-500/20 text-green-400 hover:bg-green-500/30">Completed</Badge>;
       case "pending":
-        return <Badge className="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30">Pending</Badge>
+        return <Badge className="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30">Pending</Badge>;
       case "failed":
-        return <Badge className="bg-red-500/20 text-red-400 hover:bg-red-500/30">Failed</Badge>
+        return <Badge className="bg-red-500/20 text-red-400 hover:bg-red-500/30">Failed</Badge>;
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -112,7 +101,6 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
               </button>
             )}
           </div>
-
           <Button
             variant="outline"
             size="sm"
@@ -128,7 +116,6 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
             )}
           </Button>
         </div>
-
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -158,10 +145,12 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                       <SelectItem value="transfer" className="text-white/80 hover:text-white focus:text-white">
                         Transfers
                       </SelectItem>
+                      <SelectItem value="refund" className="text-white/80 hover:text-white focus:text-white">
+                        Refunds
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <label className="text-white/60 text-sm block mb-2">Currency</label>
                   <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
@@ -180,7 +169,6 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="flex items-end">
                   <Button
                     variant="outline"
@@ -196,12 +184,10 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
           )}
         </AnimatePresence>
       </div>
-
       {filteredTransactions.length > 0 ? (
         <div className="space-y-4">
           {filteredTransactions.map((transaction) => {
-            const isExpanded = expandedTransaction === transaction.id
-
+            const isExpanded = expandedTransaction === transaction.id;
             return (
               <motion.div
                 key={transaction.id}
@@ -216,7 +202,6 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                   <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mr-4">
                     {getTransactionIcon(transaction.type)}
                   </div>
-
                   <div className="flex-1">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                       <div>
@@ -228,46 +213,54 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                           {transaction.description || `${transaction.type} transaction`}
                         </div>
                       </div>
-
                       <div className="mt-2 md:mt-0 flex flex-col md:items-end">
                         <div className="text-white font-medium">
-                          {transaction.type === "deposit" ? "+" : transaction.type === "withdrawal" ? "-" : ""}
+                          {transaction.type === "deposit" || transaction.type === "refund"
+                            ? "+"
+                            : transaction.type === "withdrawal"
+                            ? "-"
+                            : ""}
                           {currencies[transaction.currency].symbol}
                           {transaction.amount.toFixed(2)} {transaction.currency}
                         </div>
                         {transaction.type === "transfer" && transaction.targetCurrency && (
                           <div className="text-sm text-white/60">
                             → {currencies[transaction.targetCurrency].symbol}
-                            {(
-                              transaction.amount *
-                              (transaction.targetCurrency === "CNY" && transaction.currency === "USD"
-                                ? 7.25
-                                : transaction.targetCurrency === "USD" && transaction.currency === "CNY"
-                                  ? 1 / 7.25
-                                  : 1)
-                            ).toFixed(2)}{" "}
-                            {transaction.targetCurrency}
+                            {transaction.amount.toFixed(2)} {transaction.targetCurrency}
                           </div>
                         )}
                       </div>
                     </div>
-
                     <div className="flex flex-col md:flex-row md:items-center justify-between mt-2">
                       <div className="flex items-center text-sm text-white/60">
                         <Clock className="h-3 w-3 mr-1" />
                         {new Date(transaction.date).toLocaleString()}
                       </div>
-                      <div className="mt-2 md:mt-0">{getStatusBadge(transaction.status)}</div>
+                      <div className="mt-2 md:mt-0 flex items-center gap-2">
+                        {getStatusBadge(transaction.status)}
+                        {transaction.type === "deposit" && transaction.paymentIntentId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRefund(transaction.id, transaction.amount, transaction.currency, transaction.paymentIntentId);
+                            }}
+                            className="text-yellow-400 hover:text-yellow-300"
+                          >
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                            Refund
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-
                   <Button variant="ghost" size="sm" className="ml-2 text-white/60 hover:text-white">
                     <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3 }}>
                       <ChevronDown className="h-4 w-4" />
                     </motion.div>
                   </Button>
                 </div>
-
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
@@ -284,67 +277,46 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                             <div className="grid grid-cols-2 gap-y-2 text-sm">
                               <div className="text-white/60">Transaction ID:</div>
                               <div className="text-white">{transaction.id}</div>
-
                               <div className="text-white/60">Type:</div>
                               <div className="text-white capitalize">{transaction.type}</div>
-
                               <div className="text-white/60">Status:</div>
                               <div>{getStatusBadge(transaction.status)}</div>
-
                               <div className="text-white/60">Date:</div>
                               <div className="text-white">{new Date(transaction.date).toLocaleString()}</div>
                             </div>
                           </div>
                         </div>
-
                         <div>
                           <h4 className="text-white/60 text-sm mb-1">Amount Details</h4>
                           <div className="bg-white/5 rounded-lg p-3">
                             <div className="grid grid-cols-2 gap-y-2 text-sm">
                               <div className="text-white/60">Currency:</div>
                               <div className="text-white">{transaction.currency}</div>
-
                               <div className="text-white/60">Amount:</div>
                               <div className="text-white">
                                 {currencies[transaction.currency].symbol}
                                 {transaction.amount.toFixed(2)}
                               </div>
-
                               {transaction.type === "transfer" && transaction.targetCurrency && (
                                 <>
                                   <div className="text-white/60">Target Currency:</div>
                                   <div className="text-white">{transaction.targetCurrency}</div>
-
                                   <div className="text-white/60">Converted Amount:</div>
                                   <div className="text-white">
                                     {currencies[transaction.targetCurrency].symbol}
-                                    {(
-                                      transaction.amount *
-                                      (transaction.targetCurrency === "CNY" && transaction.currency === "USD"
-                                        ? 7.25
-                                        : transaction.targetCurrency === "USD" && transaction.currency === "CNY"
-                                          ? 1 / 7.25
-                                          : 1)
-                                    ).toFixed(2)}
+                                    {transaction.amount.toFixed(2)}
                                   </div>
                                 </>
                               )}
                             </div>
                           </div>
                         </div>
-
                         <div>
                           <h4 className="text-white/60 text-sm mb-1">Additional Information</h4>
                           <div className="bg-white/5 rounded-lg p-3 h-full">
                             <div className="text-sm text-white">
                               {transaction.description || "No additional information available."}
                             </div>
-
-                            {transaction.type === "transfer" && transaction.currency === "CNY" && (
-                              <div className="mt-2 text-xs text-amber-400 bg-amber-500/10 p-2 rounded">
-                                Note: CNY has a fixed exchange rate of 1.30 for every 100 units.
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -352,7 +324,7 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
                   )}
                 </AnimatePresence>
               </motion.div>
-            )
+            );
           })}
         </div>
       ) : (
@@ -378,6 +350,5 @@ export function TransactionHistory({ transactions, currencies }: TransactionHist
         </div>
       )}
     </div>
-  )
+  );
 }
-

@@ -1,7 +1,8 @@
-"use client"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -11,37 +12,25 @@ import {
   ArrowRightLeft,
   TrendingUp,
   Sparkles,
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-
-type CurrencyCode = "USD" | "EUR" | "CNY" | "JPY"
-
-interface Transaction {
-  id: string
-  type: "deposit" | "transfer" | "withdrawal"
-  amount: number
-  currency: CurrencyCode
-  targetCurrency?: CurrencyCode
-  date: string
-  status: "completed" | "pending" | "failed"
-  description?: string
-}
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { CurrencyCode, Transaction } from "@/types/balance";
 
 interface CurrencyCardProps {
-  currency: CurrencyCode
-  amount: number
-  symbol: string
-  name: string
-  icon: LucideIcon
-  lastUpdated: string
-  usdEquivalent: string
-  isExpanded: boolean
-  onToggleExpand: () => void
-  onDeposit: () => void
-  onTransfer: () => void
-  exchangeRate: number
-  color: string
-  recentTransactions: Transaction[]
+  currency: CurrencyCode;
+  amount: number;
+  symbol: string;
+  name: string;
+  icon: LucideIcon;
+  lastUpdated: string;
+  usdEquivalent: string;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onDeposit: () => void;
+  onTransfer: () => void;
+  exchangeRate: number;
+  color: string;
+  recentTransactions: Transaction[];
 }
 
 export function CurrencyCard({
@@ -60,9 +49,8 @@ export function CurrencyCard({
   color,
   recentTransactions,
 }: CurrencyCardProps) {
-  // Generate random trend percentage between -5 and +15
-  const trend = Math.random() * 20 - 5
-  const isPositive = trend > 0
+  const trend = Math.random() * 20 - 5; // Mocked for demo
+  const isPositive = trend > 0;
 
   return (
     <motion.div
@@ -75,8 +63,6 @@ export function CurrencyCard({
     >
       <Card className="bg-white/5 backdrop-blur-sm border border-white/10 overflow-hidden relative h-full">
         <div className={`absolute inset-0 bg-gradient-to-br ${color}/20 opacity-50`} />
-
-        {/* Animated holographic pattern */}
         <motion.div
           className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(255,255,255,0.1)_0%,_transparent_50%)] opacity-30"
           animate={{
@@ -89,7 +75,6 @@ export function CurrencyCard({
           }}
           transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
         />
-
         <CardContent className="p-6 relative z-10">
           <div className="flex justify-between items-start">
             <div>
@@ -106,7 +91,6 @@ export function CurrencyCard({
               </motion.div>
               <div className="text-sm text-white/60 mt-1">≈ ${usdEquivalent} USD</div>
             </div>
-
             <motion.div
               whileHover={{ scale: 1.1, rotate: 5 }}
               className="w-12 h-12 rounded-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm flex items-center justify-center"
@@ -114,7 +98,6 @@ export function CurrencyCard({
               <Icon className="h-6 w-6 text-white" />
             </motion.div>
           </div>
-
           <div className="flex justify-between items-center mt-4">
             <div className="flex items-center">
               {isPositive ? (
@@ -128,13 +111,11 @@ export function CurrencyCard({
               </span>
               <span className="text-xs text-white/60 ml-1">vs last week</span>
             </div>
-
             <div className="flex items-center text-xs text-white/60">
               <Clock className="h-3 w-3 mr-1" />
               <span>Updated {lastUpdated}</span>
             </div>
           </div>
-
           <div className="flex justify-between mt-4">
             <Button
               size="sm"
@@ -164,7 +145,6 @@ export function CurrencyCard({
               </motion.div>
             </Button>
           </div>
-
           <AnimatePresence>
             {isExpanded && (
               <motion.div
@@ -184,19 +164,10 @@ export function CurrencyCard({
                       <div className="flex justify-between mb-2">
                         <div className="text-white/60 text-sm">Current Rate</div>
                         <div className="text-white font-medium">
-                          1 {currency === "USD" ? currency : "USD"} ={" "}
-                          {currency === "USD" ? "1.0000" : exchangeRate.toFixed(4)}{" "}
-                          {currency === "USD" ? "USD" : currency}
+                          1 USD = {exchangeRate.toFixed(4)} {currency}
                         </div>
                       </div>
-
-                      {currency === "CNY" && (
-                        <div className="text-amber-400 text-xs mt-2 bg-amber-500/10 p-2 rounded">
-                          Note: CNY has a fixed exchange rate of 1.30 for every 100 units.
-                        </div>
-                      )}
                     </div>
-
                     <h3 className="text-white font-medium mt-4 mb-3 flex items-center">
                       <Sparkles className="h-4 w-4 mr-2 text-white/60" />
                       Quick Stats
@@ -219,7 +190,7 @@ export function CurrencyCard({
                           {recentTransactions
                             .filter(
                               (t) =>
-                                t.type === "transfer" && (t.currency === currency || t.targetCurrency === currency),
+                                t.type === "transfer" && (t.currency === currency || t.targetCurrency === currency)
                             )
                             .reduce((sum, t) => sum + t.amount, 0)
                             .toFixed(2)}
@@ -227,25 +198,25 @@ export function CurrencyCard({
                       </div>
                     </div>
                   </div>
-
                   <div>
                     <h3 className="text-white font-medium mb-3">Recent Transactions</h3>
                     {recentTransactions.length > 0 ? (
                       <div className="space-y-2">
                         {recentTransactions.map((transaction) => {
-                          const Icon =
-                            transaction.type === "deposit"
-                              ? ArrowDownRight
-                              : transaction.type === "withdrawal"
-                                ? ArrowUpRight
-                                : ArrowRightLeft
-
-                          const iconColorClass =
-                            transaction.type === "deposit"
-                              ? "text-green-400"
-                              : transaction.type === "withdrawal"
-                                ? "text-red-400"
-                                : "text-blue-400"
+                          const iconMap = {
+                            deposit: ArrowDownRight,
+                            withdrawal: ArrowUpRight,
+                            transfer: ArrowRightLeft,
+                            refund: ArrowDownRight,
+                          };
+                          const colorMap = {
+                            deposit: "text-green-400",
+                            withdrawal: "text-red-400",
+                            transfer: "text-blue-400",
+                            refund: "text-yellow-400",
+                          };
+                          const Icon = iconMap[transaction.type];
+                          const iconColorClass = colorMap[transaction.type];
 
                           return (
                             <div key={transaction.id} className="flex items-center p-3 rounded-lg bg-white/5">
@@ -258,11 +229,11 @@ export function CurrencyCard({
                                 <div className="flex justify-between">
                                   <div className="text-white text-sm capitalize">{transaction.type}</div>
                                   <div className="text-white text-sm">
-                                    {transaction.type === "deposit"
+                                    {transaction.type === "deposit" || transaction.type === "refund"
                                       ? "+"
                                       : transaction.type === "withdrawal"
-                                        ? "-"
-                                        : ""}
+                                      ? "-"
+                                      : ""}
                                     {symbol}
                                     {transaction.amount.toFixed(2)}
                                   </div>
@@ -272,7 +243,7 @@ export function CurrencyCard({
                                 </div>
                               </div>
                             </div>
-                          )
+                          );
                         })}
                       </div>
                     ) : (
@@ -288,6 +259,5 @@ export function CurrencyCard({
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 }
-

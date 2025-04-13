@@ -15,6 +15,7 @@
     "strictPropertyInitialization": false,
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "types": ["jest"],
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
