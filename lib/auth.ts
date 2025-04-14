@@ -1,10 +1,9 @@
-import { type NextAuthOptions, type Session } from "next-auth";
+import { User, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { companies, users } from "./schema";
 import { eq } from "drizzle-orm";
-import { type JWT } from "next-auth/jwt";
 
 export interface CustomUser {
   id: string;
@@ -12,14 +11,17 @@ export interface CustomUser {
   email?: string | null;
   type: "user" | "company";
   companyId?: string;
-  stripeAccountId?: string | null; // Added for Stripe Connect
+  stripeAccountId?: string | null;
 }
 
 declare module "next-auth" {
   interface Session {
     user: CustomUser;
   }
-  interface User extends CustomUser {}
+  interface User extends CustomUser {
+    // Add at least one property to make the extension meaningful
+    _type: "next-auth-user"; // example property
+  }
 }
 
 declare module "next-auth/jwt" {
@@ -42,13 +44,12 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials): Promise<CustomUser | null> {
+      async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         try {
-          // Busca usuário
           const userResult = await db
             .select({
               id: users.id,
@@ -63,7 +64,6 @@ export const authOptions: NextAuthOptions = {
             .where(eq(users.email, credentials.email))
             .limit(1);
 
-          // Busca empresa se não encontrar usuário
           const companyResult =
             userResult.length === 0
               ? await db
@@ -93,6 +93,7 @@ export const authOptions: NextAuthOptions = {
             type: userResult[0] ? "user" : "company",
             companyId: userResult[0]?.companyId?.toString() || companyResult[0]?.id?.toString(),
             stripeAccountId: userResult[0]?.stripeAccountId,
+            _type: "next-auth-user", // Add the required _type property
           };
         } catch (error) {
           console.error("Authentication error:", error);
@@ -133,6 +134,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 dias
+    maxAge: 30 * 24 * 60 * 60,
   },
 };

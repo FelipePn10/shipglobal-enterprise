@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import type { MySql2DrizzleConfig } from "drizzle-orm/mysql2";
 import {
   companies,
   users,
@@ -22,7 +21,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Tipagem inferida automaticamente pelo Drizzle, mantendo robustez e compatibilidade
+
 export const db = drizzle(pool, {
   schema: {
     companies,

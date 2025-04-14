@@ -20,6 +20,10 @@ interface ExportOptions {
   orientation?: "portrait" | "landscape";
 }
 
+interface CustomJsPDF extends jsPDF {
+  getNumberOfPages(): number;
+}
+
 const DEFAULT_OPTIONS: ExportOptions = {
   companyName: "Financial Summary",
   primaryColor: "#4f46e5", // indigo-500
@@ -60,11 +64,6 @@ export function exportFinancialSummaryPDF(
   const totalOverdue = items
     .filter(item => item.status === "overdue")
     .reduce((sum, item) => sum + item.amount, 0);
-  
-  const typeAmounts = items.reduce((acc, item) => {
-    acc[item.type] = (acc[item.type] || 0) + item.amount;
-    return acc;
-  }, {} as Record<string, number>);
 
   // Document metrics
   const pageWidth = doc.internal.pageSize.width;
@@ -314,7 +313,7 @@ export function exportFinancialSummaryPDF(
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       // Use the correct method to get page count
-      const pageCount = (doc as any).getNumberOfPages();
+      const pageCount = (doc as CustomJsPDF).getNumberOfPages();
       const currentPage = data.pageNumber;
       doc.text(
         `Page ${currentPage} of ${pageCount}`,
