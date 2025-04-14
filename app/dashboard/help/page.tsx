@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { HelpCircle, Search, FileText, MessageSquare, Video, ExternalLink, Mail, Phone } from "lucide-react"
+import Image from "next/image"
 
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -245,7 +246,7 @@ export default function HelpPage() {
                 className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden hover:bg-white/[0.07] transition-colors cursor-pointer"
               >
                 <div className="relative">
-                  <img src={video.thumbnail || "/placeholder.svg"} alt={video.title} className="w-full h-auto" />
+                  <Image src={video.thumbnail || "/placeholder.svg"} alt={video.title} className="w-full h-auto" />
                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                     {video.duration}
                   </div>

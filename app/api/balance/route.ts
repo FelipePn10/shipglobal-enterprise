@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { getExchangeRates } from "@/lib/exchange-rates";
 import { BalanceData, Transaction, CurrencyCode } from "@/types/balance";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user || session.user.type !== "user") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const url = new URL(req.url);
+    const userId = parseInt(url.searchParams.get("userId") || "0");
+    if (!userId || isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid or missing userId" }, { status: 400 });
     }
-
-    const userId = parseInt(session.user.id);
 
     // Query balances
     const balanceRecords = await db
@@ -27,9 +24,9 @@ export async function GET() {
       .where(eq(balances.userId, userId));
 
     const balancesData: BalanceData = balanceRecords.reduce((acc, record) => {
-      acc[record.currency as CurrencyCode] = {
-        amount: parseFloat(record.amount as string),
-        lastUpdated: (record.lastUpdated as Date).toISOString(),
+      acc[record.currency] = {
+        amount: parseFloat(record.amount),
+        lastUpdated: record.lastUpdated.toISOString(),
       };
       return acc;
     }, {} as BalanceData);
@@ -42,7 +39,7 @@ export async function GET() {
       }
     }
 
-    // Query transactions (last 30 days for history)
+    // Query transactions
     const transactionRecords = await db
       .select({
         id: transactions.id,
@@ -56,25 +53,19 @@ export async function GET() {
         targetCurrency: transactions.targetCurrency,
       })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, userId),
-          // Optional: Filter last 30 days
-          gt(transactions.date, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
-        )
-      )
+      .where(eq(transactions.userId, userId))
       .orderBy(desc(transactions.date))
-      .limit(100); // Reasonable limit for UI
+      .limit(100);
 
     const transactionsData: Transaction[] = transactionRecords.map((record) => ({
       id: `tx-${record.id}`,
       type: record.type as Transaction["type"],
-      amount: parseFloat(record.amount as string),
+      amount: parseFloat(record.amount),
       currency: record.currency as CurrencyCode,
-      date: (record.date as Date).toISOString(),
+      date: record.date.toISOString(),
       status: record.status as Transaction["status"],
-      description: typeof record.description === "string" ? record.description : undefined,
-      paymentIntentId: typeof record.paymentIntentId === "string" ? record.paymentIntentId : undefined,
+      description: record.description || undefined,
+      paymentIntentId: record.paymentIntentId || undefined,
       targetCurrency: record.targetCurrency as CurrencyCode | undefined,
     }));
 
@@ -99,9 +90,7 @@ export async function GET() {
   }
 }
 
-// Helper to generate historical balance data
 async function generateHistoricalBalanceData(userId: number) {
-  // Get transactions from the last 30 days
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const txRecords = await db
     .select({
@@ -115,7 +104,6 @@ async function generateHistoricalBalanceData(userId: number) {
     .where(and(eq(transactions.userId, userId), gt(transactions.date, thirtyDaysAgo)))
     .orderBy(transactions.date);
 
-  // Get current balances
   const currentBalances = await db
     .select({
       currency: balances.currency,
@@ -131,12 +119,11 @@ async function generateHistoricalBalanceData(userId: number) {
     JPY: 0,
   };
   currentBalances.forEach((b) => {
-    if (["USD", "EUR", "CNY", "JPY"].includes(b.currency as string)) {
-      balancesMap[b.currency as CurrencyCode] = parseFloat(b.amount as string);
+    if (["USD", "EUR", "CNY", "JPY"].includes(b.currency)) {
+      balancesMap[b.currency as CurrencyCode] = parseFloat(b.amount);
     }
   });
 
-  // Generate daily snapshots (backwards from today)
   const historicalData: Array<{ date: string; USD: number; EUR: number; CNY: number; JPY: number }> = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -146,12 +133,11 @@ async function generateHistoricalBalanceData(userId: number) {
     const dateStr = date.toISOString().split("T")[0];
     const snapshot = { ...balancesMap };
 
-    // Adjust balances based on transactions after this date
     for (const tx of txRecords) {
-      const txDate = new Date(tx.date as unknown as string);
+      const txDate = new Date(tx.date);
       txDate.setHours(0, 0, 0, 0);
       if (txDate > date) {
-        const amount = parseFloat(tx.amount as string);
+        const amount = parseFloat(tx.amount);
         if (tx.type === "deposit") {
           snapshot[tx.currency as CurrencyCode] -= amount;
         } else if (tx.type === "withdrawal") {
@@ -174,5 +160,5 @@ async function generateHistoricalBalanceData(userId: number) {
     });
   }
 
-  return historicalData.reverse(); // Oldest to newest
+  return historicalData.reverse();
 }

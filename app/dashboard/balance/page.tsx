@@ -1,18 +1,15 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { BalanceClient } from "@/components/balance/balance-client";
-import { DollarSign, Euro, Currency, JapaneseYen } from "lucide-react";
+import { DollarSign, Euro, Currency } from "lucide-react";
 import { CurrencyCode, BalanceData, Transaction } from "@/types/balance";
 
-async function fetchBalanceData(): Promise<{
+async function fetchBalanceData(userId: number): Promise<{
   balances: BalanceData;
   exchangeRates: Record<string, number>;
   transactions: Transaction[];
   historicalData: Array<{ date: string; USD: number; EUR: number; CNY: number; JPY: number }>;
 }> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/balance`, {
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/balance?userId=${userId}`, {
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
   });
@@ -24,23 +21,15 @@ async function fetchBalanceData(): Promise<{
   const data = await res.json();
   return {
     balances: data.balances,
-    exchangeRates: data.exchangeRates.reduce(
-      (acc: Record<string, number>, rate: { currency: string; rate: number }) => {
-        acc[rate.currency] = rate.rate;
-        return acc;
-      },
-      {}
-    ),
+    exchangeRates: data.exchangeRates,
     transactions: data.transactions,
     historicalData: data.historicalData,
   };
 }
 
 export default async function BalancePage() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    redirect("/auth/login");
-  }
+  // For testing, use a fixed userId (e.g., 1) since auth is removed
+  const testUserId = 1;
 
   let balances: BalanceData = {};
   let exchangeRates: Record<string, number> = {};
@@ -48,7 +37,7 @@ export default async function BalancePage() {
   let historicalData: Array<{ date: string; USD: number; EUR: number; CNY: number; JPY: number }> = [];
 
   try {
-    const data = await fetchBalanceData();
+    const data = await fetchBalanceData(testUserId);
     balances = data.balances;
     exchangeRates = data.exchangeRates;
     transactions = data.transactions;
@@ -85,7 +74,7 @@ export default async function BalancePage() {
     USD: { symbol: "$", name: "US Dollar", icon: DollarSign, color: "from-blue-500 to-indigo-500" },
     EUR: { symbol: "€", name: "Euro", icon: Euro, color: "from-indigo-500 to-violet-500" },
     CNY: { symbol: "¥", name: "Chinese Yuan", icon: Currency, color: "from-red-500 to-orange-500" },
-    JPY: { symbol: "¥", name: "Japanese Yen", icon: JapaneseYen, color: "from-emerald-500 to-teal-500" },
+    JPY: { symbol: "¥", name: "Japanese Yen", icon: Currency, color: "from-emerald-500 to-teal-500" },
   };
 
   return (

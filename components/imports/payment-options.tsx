@@ -10,6 +10,7 @@ import { AlertCircle, BanknoteIcon, CreditCardIcon, DollarSign, QrCode, ShieldCh
 import type { Control, UseFormSetValue, UseFormWatch } from "react-hook-form"
 import type { ImportFormValues } from "@/types/types"
 import { useEffect } from "react"
+import Image from "next/image"
 
 interface PaymentOptionsProps {
   control: Control<ImportFormValues>
@@ -389,7 +390,7 @@ export function PaymentOptions({
                       />
 
                       <div className="bg-blue-500/10 p-3 rounded-md border border-blue-500/20 flex items-center text-sm">
-                        <img src="/placeholder.svg?height=24&width=24" alt="PayPal" className="h-6 w-6 mr-2" />
+                        <Image src="/placeholder.svg?height=24&width=24" alt="PayPal" className="h-6 w-6 mr-2" />
                         <span>You'll be redirected to PayPal to complete your payment</span>
                       </div>
 

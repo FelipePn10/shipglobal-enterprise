@@ -1,6 +1,7 @@
 import { Check, CreditCard, DollarSign, QrCode, Wallet } from "lucide-react"
 import type { ImportFormValues } from "@/types/types"
 import type { UseFormWatch } from "react-hook-form"
+import Image from "next/image"
 
 interface PaymentStepProps {
   watch: UseFormWatch<ImportFormValues>
@@ -74,7 +75,7 @@ export function PaymentStep({
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-white/70">Origin</span>
                   <div className="flex items-center">
-                    <img
+                    <Image
                       src={getCountryFlag(originCountry) || "/placeholder.svg"}
                       alt={getCountryName(originCountry)}
                       className="h-3 mr-2"
@@ -192,7 +193,7 @@ export function PaymentStep({
 
                 <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/30 mb-4">
                   <div className="flex items-start">
-                    <img src="/placeholder.svg?height=32&width=32" alt="PayPal" className="h-8 w-8 mr-3" />
+                    <Image src="/placeholder.svg?height=32&width=32" alt="PayPal" className="h-8 w-8 mr-3" />
                     <div>
                       <h4 className="font-medium text-blue-300">Ready to Connect with PayPal</h4>
                       <p className="text-sm text-white/70">

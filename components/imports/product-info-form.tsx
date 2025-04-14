@@ -15,6 +15,7 @@ import { ExternalLink, Package2, Tag } from "lucide-react"
 import type { Control } from "react-hook-form"
 import type { ImportFormValues } from "@/types/types"
 import { popularCountries, productCategories } from "@/data/data"
+import Image from "next/image"
 
 interface ProductInfoFormProps {
   control: Control<ImportFormValues>
@@ -80,7 +81,7 @@ export function ProductInfoForm({ control, getCountryFlag }: ProductInfoFormProp
                       {popularCountries.map((country) => (
                         <SelectItem key={country.value} value={country.value}>
                           <div className="flex items-center">
-                            <img
+                            <Image
                               src={getCountryFlag(country.value) || "/placeholder.svg"}
                               alt={country.label}
                               className="h-3 mr-2"

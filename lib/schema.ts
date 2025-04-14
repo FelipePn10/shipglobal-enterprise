@@ -33,6 +33,7 @@ export const users = mysqlTable("users", {
   role: varchar("role", { length: 50 }).notNull(),
   stripeAccountId: varchar("stripe_account_id", { length: 50 }),
   createdAt: datetime("createdAt", { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: datetime("updatedAt", { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull().$onUpdateFn(() => sql`CURRENT_TIMESTAMP`),
 });
 
 export const balances = mysqlTable(

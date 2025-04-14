@@ -1,6 +1,7 @@
 import { Check, CreditCard, DollarSign, QrCode, Wallet } from "lucide-react"
 import type { ImportFormValues } from "@/types/types"
 import type { UseFormGetValues } from "react-hook-form"
+import Image from "next/image"
 
 interface PaymentConfirmationProps {
   getValues: UseFormGetValues<ImportFormValues>
@@ -63,7 +64,7 @@ export function PaymentConfirmation({
             <h4 className="text-sm font-medium text-white/60 mb-1">Origin</h4>
             <div className="flex items-center">
               {getValues("originCountry") && (
-                <img
+                <Image
                   src={getCountryFlag(getValues("originCountry")) || "/placeholder.svg"}
                   alt={getCountryName(getValues("originCountry"))}
                   className="h-4 mr-2"
