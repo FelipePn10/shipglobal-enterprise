@@ -279,7 +279,7 @@ export default function HowItWorksPage() {
 
               <p className="text-white/70 mb-6 leading-relaxed">
                 Our advanced technology platform makes international shopping as easy as local purchasing. From our
-                user-friendly dashboard to our real-time tracking system, we've designed every aspect of our service to
+                user-friendly dashboard to our real-time tracking system, weve designed every aspect of our service to
                 provide a seamless experience.
               </p>
 
@@ -298,7 +298,7 @@ export default function HowItWorksPage() {
                   <div>
                     <span className="text-white/90 font-medium">Real-Time Tracking</span>
                     <p className="text-white/70 text-sm mt-1">
-                      Follow your package's journey with detailed status updates
+                      Follow your packages journey with detailed status updates
                     </p>
                   </div>
                 </li>

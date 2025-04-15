@@ -1,8 +1,14 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMemo, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChartContainer,
   ChartTooltip,
@@ -17,23 +23,23 @@ import {
   Area,
   Bar,
   Line,
-} from "@/components/ui/chart"
-import { formatCurrency, formatNumber } from "@/lib/utils"
+} from "@/components/ui/chart";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 interface AnalyticsData {
-  month: string
-  revenue: number
-  expenses: number
-  profit: number
-  imports: number
-  exports: number
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+  imports: number;
+  exports: number;
 }
 
 interface ImprovedAnalyticsChartProps {
-  title?: string
-  description?: string
-  data?: AnalyticsData[]
-  defaultView?: "revenue" | "volume" | "profit"
+  title?: string;
+  description?: string;
+  data?: AnalyticsData[];
+  defaultView?: "revenue" | "volume" | "profit";
 }
 
 const defaultData: AnalyticsData[] = [
@@ -49,29 +55,48 @@ const defaultData: AnalyticsData[] = [
   { month: "Oct", revenue: 8800, expenses: 5600, profit: 3200, imports: 27, exports: 19 },
   { month: "Nov", revenue: 9500, expenses: 6000, profit: 3500, imports: 32, exports: 23 },
   { month: "Dec", revenue: 10200, expenses: 6500, profit: 3700, imports: 35, exports: 25 },
-]
+];
 
-export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
+export function ImprovedAnalyticsChart({
   title = "Business Performance",
   description = "Overview of your business metrics over time",
   data = defaultData,
   defaultView = "revenue",
-}) => {
-  const [activeTab, setActiveTab] = useState<string>(defaultView)
+}: ImprovedAnalyticsChartProps) {
+  const [activeTab, setActiveTab] = useState<string>(defaultView);
 
-  const chartConfig = {
-    revenue: { label: "Revenue", color: "hsl(var(--primary))" },
-    expenses: { label: "Expenses", color: "hsl(var(--destructive))" },
-    profit: { label: "Profit", color: "hsl(var(--success))" },
-    imports: { label: "Imports", color: "hsl(var(--primary))" },
-    exports: { label: "Exports", color: "hsl(var(--secondary))" },
+  // Memoize chart configuration to prevent recreation
+  const chartConfig = useMemo(
+    () => ({
+      revenue: { label: "Revenue", color: "hsl(var(--primary))" },
+      expenses: { label: "Expenses", color: "hsl(var(--destructive))" },
+      profit: { label: "Profit", color: "hsl(var(--success))" },
+      imports: { label: "Imports", color: "hsl(var(--primary))" },
+      exports: { label: "Exports", color: "hsl(var(--secondary))" },
+    }),
+    [],
+  );
+
+  // Formatter functions for chart ticks
+  const currencyTickFormatter = (value: number): string =>
+    formatCurrency(value);
+  const numberTickFormatter = (value: number): string =>
+    formatNumber(value);
+
+  // Handle empty data case
+  if (!data.length) {
+    return (
+      <Card className="shadow-md border-border/40 overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-white/60">No data available</p>
+        </CardContent>
+      </Card>
+    );
   }
-
-  // Create wrapper functions that match Recharts' tickFormatter signature
-  const currencyTickFormatter = (value: any, _index: number): string => 
-    formatCurrency(value as number)
-  const numberTickFormatter = (value: any, _index: number): string => 
-    formatNumber(value as number)
 
   return (
     <Card className="shadow-md border-border/40 overflow-hidden">
@@ -80,7 +105,12 @@ export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+          aria-label="Analytics view selector"
+        >
           <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto">
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="profit">Profit</TabsTrigger>
@@ -89,7 +119,7 @@ export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
 
           <TabsContent value="revenue" className="pt-2">
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <AreaChart data={data}>
+              <AreaChart data={data} aria-label="Revenue and expenses over time">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis width={65} tickFormatter={currencyTickFormatter} />
@@ -121,7 +151,7 @@ export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
 
           <TabsContent value="profit" className="pt-2">
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <LineChart data={data}>
+              <LineChart data={data} aria-label="Profit over time">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis width={65} tickFormatter={currencyTickFormatter} />
@@ -144,7 +174,7 @@ export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
 
           <TabsContent value="volume" className="pt-2">
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={data}>
+              <BarChart data={data} aria-label="Imports and exports volume over time">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis width={40} tickFormatter={numberTickFormatter} />
@@ -156,21 +186,13 @@ export const ImprovedAnalyticsChart: React.FC<ImprovedAnalyticsChartProps> = ({
                   }
                 />
                 <ChartLegend />
-                <Bar
-                  dataKey="imports"
-                  fill={chartConfig.imports.color}
-                />
-                <Bar
-                  dataKey="exports"
-                  fill={chartConfig.exports.color}
-                />
+                <Bar dataKey="imports" fill={chartConfig.imports.color} />
+                <Bar dataKey="exports" fill={chartConfig.exports.color} />
               </BarChart>
             </ChartContainer>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
-
-export default ImprovedAnalyticsChart

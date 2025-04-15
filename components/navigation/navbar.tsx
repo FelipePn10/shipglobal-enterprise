@@ -25,7 +25,6 @@ interface NavbarProps {
   items?: NavItem[]
   showAuth?: boolean
   isLoggedIn?: boolean
-  userAvatar?: string
   userName?: string
   onLogin?: () => void
   onLogout?: () => void
@@ -40,7 +39,6 @@ export default function Navbar({
   items = defaultNavItems,
   showAuth = true,
   isLoggedIn = false,
-  userAvatar,
   userName,
   onLogin,
   onLogout,
@@ -290,22 +288,22 @@ export default function Navbar({
                     </button>
                   </div>
                 ) : (
-                <div className="flex flex-col space-y-2 px-2 py-2">
-                <Button 
-                    variant="ghost" 
-                    onClick={onLogin} 
-                    className="justify-start px-0 text-sm text-gray-300 hover:text-white hover:bg-transparent"
-                >
-                    Login
-                </Button>
-                <Button 
-                    variant="outline" 
-                    onClick={onSignup} 
-                    className="text-sm text-white bg-black border-white/20 transition-colors duration-300 hover:bg-gradient-to-r hover:from-pink-500 hover:via-purple-500 hover:to-pink-700"
-                >
-                    Sign up
-                </Button>
-    </div>
+                  <div className="flex flex-col space-y-2 px-2 py-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={onLogin} 
+                      className="justify-start px-0 text-sm text-gray-300 hover:text-white hover:bg-transparent"
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={onSignup} 
+                      className="text-sm text-white bg-black border-white/20 transition-colors duration-300 hover:bg-gradient-to-r hover:from-pink-500 hover:via-purple-500 hover:to-pink-700"
+                    >
+                      Sign up
+                    </Button>
+                  </div>
                 )}
               </div>
             )}

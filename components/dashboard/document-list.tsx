@@ -148,7 +148,7 @@ export default function DocumentList({ documents, className }: DocumentListProps
           </div>
           <h3 className="text-xl font-medium text-white mb-2">No documents found</h3>
           <p className="text-white/60 max-w-md">
-            You don't have any documents yet. Upload your first document to get started.
+            You dont have any documents yet. Upload your first document to get started.
           </p>
           <Button className="mt-6 bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
             Upload Document

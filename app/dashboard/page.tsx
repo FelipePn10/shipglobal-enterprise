@@ -276,7 +276,7 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-            <p className="text-white/60">Welcome back, John. Here's an overview of your import operations.</p>
+            <p className="text-white/60">Welcome back, John. Heres an overview of your import operations.</p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">

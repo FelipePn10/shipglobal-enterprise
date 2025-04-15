@@ -161,7 +161,7 @@ export function CheckoutComplete({
         {/* Additional info */}
         {!orderPlaced && (
           <p className="text-center text-xs text-gray-500 mt-4">
-            By clicking "Complete Payment" you agree to our terms and conditions.
+            By clicking Complete Payment you agree to our terms and conditions.
           </p>
         )}
       </div>

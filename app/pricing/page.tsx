@@ -225,7 +225,7 @@ export default function PricingPage() {
             <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-rose-500 mx-auto mb-8" />
 
             <p className="text-white/70 leading-relaxed">
-              Select the plan that best fits your international shopping needs, whether you're an individual shopper or
+              Select the plan that best fits your international shopping needs, whether youre an individual shopper or
               a business.
             </p>
           </motion.div>

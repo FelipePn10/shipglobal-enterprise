@@ -371,7 +371,7 @@ export default function MessagesPage() {
                       </div>
                       <h3 className="text-xl font-medium text-white mb-2">No unread messages</h3>
                       <p className="text-white/60">
-                        You've read all your messages. Great job staying up to date!
+                        Youve read all your messages. Great job staying up to date!
                       </p>
                     </div>
                   )}

@@ -49,7 +49,11 @@ export function ManagePermissionsModal({
     }
   }, [member])
 
-  const handlePermissionChange = (section: string, permission: string, checked: boolean) => {
+  const handlePermissionChange = (
+    section: keyof TeamMemberPermissions,
+    permission: string,
+    checked: boolean
+  ) => {
     setPermissions((prev) => {
       const newPermissions = { ...prev }
 
@@ -64,8 +68,9 @@ export function ManagePermissionsModal({
           newPermissions.settings = { view: true, edit: true }
         }
       } else {
-        // @ts-ignore - Dynamic access
-        newPermissions[section][permission] = checked
+        // Use type assertion for dynamic access
+        const sectionPermissions = newPermissions[section] as Record<string, boolean>
+        sectionPermissions[permission] = checked
 
         // If any permission is disabled, admin should be false
         if (!checked) {
@@ -74,10 +79,10 @@ export function ManagePermissionsModal({
 
         // Check if all permissions are enabled, then admin should be true
         const allEnabled =
-          Object.values(newPermissions.dashboard).every((v) => v) &&
-          Object.values(newPermissions.team).every((v) => v) &&
-          Object.values(newPermissions.reports).every((v) => v) &&
-          Object.values(newPermissions.settings).every((v) => v)
+          Object.values(newPermissions.dashboard).every(Boolean) &&
+          Object.values(newPermissions.team).every(Boolean) &&
+          Object.values(newPermissions.reports).every(Boolean) &&
+          Object.values(newPermissions.settings).every(Boolean)
 
         if (allEnabled) {
           newPermissions.admin = true
@@ -105,6 +110,7 @@ export function ManagePermissionsModal({
       accentColor="indigo"
     >
       <div className="p-6 pt-4 space-y-6">
+        {/* Admin Permission Section */}
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,183 +133,105 @@ export function ManagePermissionsModal({
 
         <Separator className="bg-white/10" />
 
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.1 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-white">Dashboard</h3>
-            <div className="h-5 w-5"></div> {/* Spacer for alignment */}
-          </div>
-          <div className="space-y-3 bg-white/5 p-3 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">View dashboard</span>
-                <p className="text-white/60 text-xs">Access to view dashboard content</p>
-              </div>
-              <Switch
-                checked={permissions.dashboard.view}
-                onCheckedChange={(checked) => handlePermissionChange("dashboard", "view", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Edit dashboard</span>
-                <p className="text-white/60 text-xs">Ability to customize dashboard</p>
-              </div>
-              <Switch
-                checked={permissions.dashboard.edit}
-                onCheckedChange={(checked) => handlePermissionChange("dashboard", "edit", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Dashboard Permissions */}
+        <PermissionSection
+          title="Dashboard"
+          delay={0.1}
+          permissions={[
+            {
+              name: "View dashboard",
+              description: "Access to view dashboard content",
+              checked: permissions.dashboard.view,
+              onChange: (checked) => handlePermissionChange("dashboard", "view", checked),
+            },
+            {
+              name: "Edit dashboard",
+              description: "Ability to customize dashboard",
+              checked: permissions.dashboard.edit,
+              onChange: (checked) => handlePermissionChange("dashboard", "edit", checked),
+            },
+          ]}
+        />
 
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.2 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-white">Team Management</h3>
-            <div className="h-5 w-5"></div> {/* Spacer for alignment */}
-          </div>
-          <div className="space-y-3 bg-white/5 p-3 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">View team members</span>
-                <p className="text-white/60 text-xs">Access to view team member profiles</p>
-              </div>
-              <Switch
-                checked={permissions.team.view}
-                onCheckedChange={(checked) => handlePermissionChange("team", "view", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Create team members</span>
-                <p className="text-white/60 text-xs">Ability to add new team members</p>
-              </div>
-              <Switch
-                checked={permissions.team.create}
-                onCheckedChange={(checked) => handlePermissionChange("team", "create", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Edit team members</span>
-                <p className="text-white/60 text-xs">Ability to modify team member profiles</p>
-              </div>
-              <Switch
-                checked={permissions.team.edit}
-                onCheckedChange={(checked) => handlePermissionChange("team", "edit", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Delete team members</span>
-                <p className="text-white/60 text-xs">Ability to remove team members</p>
-              </div>
-              <Switch
-                checked={permissions.team.delete}
-                onCheckedChange={(checked) => handlePermissionChange("team", "delete", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Team Management Permissions */}
+        <PermissionSection
+          title="Team Management"
+          delay={0.2}
+          permissions={[
+            {
+              name: "View team members",
+              description: "Access to view team member profiles",
+              checked: permissions.team.view,
+              onChange: (checked) => handlePermissionChange("team", "view", checked),
+            },
+            {
+              name: "Create team members",
+              description: "Ability to add new team members",
+              checked: permissions.team.create,
+              onChange: (checked) => handlePermissionChange("team", "create", checked),
+            },
+            {
+              name: "Edit team members",
+              description: "Ability to modify team member profiles",
+              checked: permissions.team.edit,
+              onChange: (checked) => handlePermissionChange("team", "edit", checked),
+            },
+            {
+              name: "Delete team members",
+              description: "Ability to remove team members",
+              checked: permissions.team.delete,
+              onChange: (checked) => handlePermissionChange("team", "delete", checked),
+            },
+          ]}
+        />
 
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.3 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-white">Reports</h3>
-            <div className="h-5 w-5"></div> {/* Spacer for alignment */}
-          </div>
-          <div className="space-y-3 bg-white/5 p-3 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">View reports</span>
-                <p className="text-white/60 text-xs">Access to view generated reports</p>
-              </div>
-              <Switch
-                checked={permissions.reports.view}
-                onCheckedChange={(checked) => handlePermissionChange("reports", "view", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Create reports</span>
-                <p className="text-white/60 text-xs">Ability to generate new reports</p>
-              </div>
-              <Switch
-                checked={permissions.reports.create}
-                onCheckedChange={(checked) => handlePermissionChange("reports", "create", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Export reports</span>
-                <p className="text-white/60 text-xs">Ability to download and export reports</p>
-              </div>
-              <Switch
-                checked={permissions.reports.export}
-                onCheckedChange={(checked) => handlePermissionChange("reports", "export", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Reports Permissions */}
+        <PermissionSection
+          title="Reports"
+          delay={0.3}
+          permissions={[
+            {
+              name: "View reports",
+              description: "Access to view generated reports",
+              checked: permissions.reports.view,
+              onChange: (checked) => handlePermissionChange("reports", "view", checked),
+            },
+            {
+              name: "Create reports",
+              description: "Ability to generate new reports",
+              checked: permissions.reports.create,
+              onChange: (checked) => handlePermissionChange("reports", "create", checked),
+            },
+            {
+              name: "Export reports",
+              description: "Ability to download and export reports",
+              checked: permissions.reports.export,
+              onChange: (checked) => handlePermissionChange("reports", "export", checked),
+            },
+          ]}
+        />
 
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.4 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-white">Settings</h3>
-            <div className="h-5 w-5"></div> {/* Spacer for alignment */}
-          </div>
-          <div className="space-y-3 bg-white/5 p-3 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">View settings</span>
-                <p className="text-white/60 text-xs">Access to view system settings</p>
-              </div>
-              <Switch
-                checked={permissions.settings.view}
-                onCheckedChange={(checked) => handlePermissionChange("settings", "view", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-white/80 text-sm">Edit settings</span>
-                <p className="text-white/60 text-xs">Ability to modify system settings</p>
-              </div>
-              <Switch
-                checked={permissions.settings.edit}
-                onCheckedChange={(checked) => handlePermissionChange("settings", "edit", checked)}
-                className="data-[state=checked]:bg-indigo-500"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Settings Permissions */}
+        <PermissionSection
+          title="Settings"
+          delay={0.4}
+          permissions={[
+            {
+              name: "View settings",
+              description: "Access to view system settings",
+              checked: permissions.settings.view,
+              onChange: (checked) => handlePermissionChange("settings", "view", checked),
+            },
+            {
+              name: "Edit settings",
+              description: "Ability to modify system settings",
+              checked: permissions.settings.edit,
+              onChange: (checked) => handlePermissionChange("settings", "edit", checked),
+            },
+          ]}
+        />
 
+        {/* Info Notice */}
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -314,6 +242,7 @@ export function ManagePermissionsModal({
           <p className="text-white/80 text-sm">Changes to permissions will take effect immediately after saving.</p>
         </motion.div>
 
+        {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t border-white/10 mt-6">
           <Button
             type="button"
@@ -347,3 +276,46 @@ export function ManagePermissionsModal({
   )
 }
 
+interface PermissionItem {
+  name: string
+  description: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}
+
+interface PermissionSectionProps {
+  title: string
+  permissions: PermissionItem[]
+  delay?: number
+}
+
+function PermissionSection({ title, permissions, delay = 0 }: PermissionSectionProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay }}
+      className="space-y-4"
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-white">{title}</h3>
+        <div className="h-5 w-5" /> {/* Spacer for alignment */}
+      </div>
+      <div className="space-y-3 bg-white/5 p-3 rounded-lg">
+        {permissions.map((permission, index) => (
+          <div key={index} className="flex items-center justify-between">
+            <div>
+              <span className="text-white/80 text-sm">{permission.name}</span>
+              <p className="text-white/60 text-xs">{permission.description}</p>
+            </div>
+            <Switch
+              checked={permission.checked}
+              onCheckedChange={permission.onChange}
+              className="data-[state=checked]:bg-indigo-500"
+            />
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}

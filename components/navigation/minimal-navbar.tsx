@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -33,8 +32,6 @@ export default function MinimalNavbar({
   onMenuClick,
   className,
 }: MinimalNavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-
   const handleLogout = () => {
     toast({
       title: "Logged out",
@@ -134,4 +131,3 @@ export default function MinimalNavbar({
     </header>
   )
 }
-

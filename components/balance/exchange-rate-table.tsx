@@ -257,7 +257,7 @@ export function ExchangeRateTable({ exchangeRates, currencies, onRefresh, isLoad
             <div>
               <h3 className="text-white font-medium mb-2">No Conversion Fees</h3>
               <p className="text-white/60 text-sm">
-                We don't charge any fees for currency conversions. The rates you see are the rates you get.
+                We dont charge any fees for currency conversions. The rates you see are the rates you get.
               </p>
             </div>
 

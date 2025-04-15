@@ -29,7 +29,7 @@ export default function ServiceTestimonial({ quote, author, location, rating }: 
         ))}
       </div>
 
-      <p className="text-white/70 mb-6 italic">"{quote}"</p>
+      <p className="text-white/70 mb-6 italic">&ldquo;{quote}&rdquo;</p>
 
       <div>
         <p className="text-white/90 font-medium">{author}</p>
@@ -38,4 +38,3 @@ export default function ServiceTestimonial({ quote, author, location, rating }: 
     </motion.div>
   )
 }
-

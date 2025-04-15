@@ -63,11 +63,11 @@ export default function CtaSection() {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white font-medium px-6 py-3 flex items-center">
-              Get Started Now <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-            <Button variant="outline" className="border border-white/20 text-gray-400 bg-black/30 p-4 rounded-lg hover:bg-white/10 hover:text-white transition-colors duration-300">
-              Learn More About Our Process
-            </Button>
+                Get Started Now <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+              <Button variant="outline" className="border border-white/20 text-gray-400 bg-black/30 p-4 rounded-lg hover:bg-white/10 hover:text-white transition-colors duration-300">
+                Learn More About Our Process
+              </Button>
             </motion.div>
 
             <motion.div
@@ -79,7 +79,7 @@ export default function CtaSection() {
               className="mt-12 text-center"
             >
               <p className={cn("text-xl text-white/60", pacifico.className)}>
-                "Unlocking global products, delivered to your doorstep"
+                &ldquo;Unlocking global products, delivered to your doorstep&rdquo;
               </p>
             </motion.div>
           </div>
@@ -88,4 +88,3 @@ export default function CtaSection() {
     </section>
   )
 }
-

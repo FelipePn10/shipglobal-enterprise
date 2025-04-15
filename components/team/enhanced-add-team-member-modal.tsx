@@ -43,7 +43,6 @@ interface AddTeamMemberModalProps {
 export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: AddTeamMemberModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
-  const [formData, setFormData] = useState<Partial<FormValues>>({})
   const { toast } = useToast()
   const nameInputRef = useRef<HTMLInputElement>(null)
 
@@ -90,7 +89,7 @@ export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: 
 
       form.reset()
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       toast({
         title: "Something went wrong",
         description: "The team member could not be added. Please try again.",
@@ -106,12 +105,12 @@ export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: 
     {
       title: "Basic Information",
       description: "Enter the team member's name and email",
-      fields: ["name", "email"],
+      fields: ["name", "email"] as const,
     },
     {
       title: "Role & Department",
       description: "Specify their role and department",
-      fields: ["role", "department", "phone"],
+      fields: ["role", "department", "phone"] as const,
     },
   ]
 
@@ -119,14 +118,13 @@ export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: 
 
   // Check if current step is valid
   const isCurrentStepValid = () => {
-    const currentFields = currentStepData.fields
-    return currentFields.every((field) => {
+    return currentStepData.fields.every((field) => {
       // Skip validation for optional fields
       if (field === "phone") return true
 
-      const fieldState = form.getFieldState(field as keyof FormValues)
+      const fieldState = form.getFieldState(field)
       // Valid if the field has been touched and has no error, or if it has a value
-      return (fieldState.isDirty && !fieldState.error) || !!form.getValues(field as keyof FormValues)
+      return (fieldState.isDirty && !fieldState.error) || !!form.getValues(field)
     })
   }
 
@@ -144,8 +142,7 @@ export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: 
       // Trigger validation for current fields
       currentStepData.fields.forEach((field) => {
         if (field !== "phone") {
-          // Skip validation for optional fields
-          form.trigger(field as keyof FormValues)
+          form.trigger(field)
         }
       })
     }
@@ -415,4 +412,3 @@ export function EnhancedAddTeamMemberModal({ open, onOpenChange, onAddMember }: 
     </Dialog>
   )
 }
-

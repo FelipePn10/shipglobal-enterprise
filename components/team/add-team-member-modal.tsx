@@ -68,7 +68,7 @@ export function AddTeamMemberModal({ open, onOpenChange, onAddMember }: AddTeamM
 
       form.reset()
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       toast({
         title: "Something went wrong",
         description: "The team member could not be added. Please try again.",
@@ -228,4 +228,3 @@ export function AddTeamMemberModal({ open, onOpenChange, onAddMember }: AddTeamM
     </Dialog>
   )
 }
-
