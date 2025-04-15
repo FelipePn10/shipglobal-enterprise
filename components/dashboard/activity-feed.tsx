@@ -1,76 +1,93 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+"use client";
 
-type ActivityType = "message" | "update" | "alert" | "document" | "payment"
+import { memo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+type ActivityType = "message" | "update" | "alert" | "document" | "payment";
 
 interface ActivityItem {
-  id: string
-  type: ActivityType
-  title: string
-  description: string
-  timestamp: string
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  timestamp: string;
   user?: {
-    name: string
-    avatar?: string
-    initials: string
-  }
-  status?: "success" | "warning" | "error" | "info"
+    name: string;
+    avatar?: string;
+    initials: string;
+  };
+  status?: "success" | "warning" | "error" | "info";
 }
 
 interface ActivityFeedProps {
-  activities: ActivityItem[]
-  className?: string
+  activities: ActivityItem[];
+  className?: string;
 }
+
+const ActivityItemComponent = memo(({ activity }: { activity: ActivityItem }) => (
+  <div
+    className="flex items-start gap-4 border-t border-border p-4 transition-colors hover:bg-muted/50"
+    role="listitem"
+  >
+    {activity.user ? (
+      <Avatar className="h-9 w-9">
+        <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
+        <AvatarFallback>{activity.user.initials}</AvatarFallback>
+      </Avatar>
+    ) : (
+      getActivityIcon(activity.type)
+    )}
+    <div className="flex-1 space-y-1">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">{activity.title}</p>
+        <time className="text-xs text-muted-foreground">{activity.timestamp}</time>
+      </div>
+      <p className="text-sm text-muted-foreground">{activity.description}</p>
+      {activity.status && (
+        <Badge variant={getVariantFromStatus(activity.status)} className="mt-1">
+          {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
+        </Badge>
+      )}
+    </div>
+  </div>
+));
+
+ActivityItemComponent.displayName = "ActivityItemComponent";
 
 export function ActivityFeed({ activities, className }: ActivityFeedProps) {
   return (
-    <Card className={cn("h-full", className)}>
+    <Card className={cn("h-full bg-background/95", className)} aria-label="Recent activity feed">
       <CardHeader>
         <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="space-y-0">
-          {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-start gap-4 border-t border-border p-4 transition-colors hover:bg-muted/50"
-            >
-              {activity.user && (
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
-                  <AvatarFallback>{activity.user.initials}</AvatarFallback>
-                </Avatar>
-              )}
-              {!activity.user && getActivityIcon(activity.type, activity.status)}
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{activity.title}</p>
-                  <time className="text-xs text-muted-foreground">{activity.timestamp}</time>
-                </div>
-                <p className="text-sm text-muted-foreground">{activity.description}</p>
-                {activity.status && (
-                  <Badge variant={getVariantFromStatus(activity.status)} className="mt-1">
-                    {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        {activities.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground">No recent activity</div>
+        ) : (
+          <div className="space-y-0" role="list">
+            {activities.map((activity) => (
+              <ActivityItemComponent key={activity.id} activity={activity} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
-function getActivityIcon(type: ActivityType, status?: string) {
-  const baseClasses = "flex h-9 w-9 items-center justify-center rounded-full"
+function getActivityIcon(type: ActivityType) {
+  const baseClasses = "flex h-9 w-9 items-center justify-center rounded-full";
 
   switch (type) {
     case "message":
       return (
-        <div className={cn(baseClasses, "bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400")}>
+        <div
+          className={cn(baseClasses, "bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400")}
+          aria-label="Message activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -86,10 +103,13 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
           </svg>
         </div>
-      )
+      );
     case "update":
       return (
-        <div className={cn(baseClasses, "bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400")}>
+        <div
+          className={cn(baseClasses, "bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400")}
+          aria-label="Update activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -108,10 +128,13 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <path d="M3 21v-5h5" />
           </svg>
         </div>
-      )
+      );
     case "alert":
       return (
-        <div className={cn(baseClasses, "bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400")}>
+        <div
+          className={cn(baseClasses, "bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400")}
+          aria-label="Alert activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -129,10 +152,13 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <path d="M12 17h.01" />
           </svg>
         </div>
-      )
+      );
     case "document":
       return (
-        <div className={cn(baseClasses, "bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400")}>
+        <div
+          className={cn(baseClasses, "bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400")}
+          aria-label="Document activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -152,10 +178,13 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <line x1="10" x2="8" y1="9" y2="9" />
           </svg>
         </div>
-      )
+      );
     case "payment":
       return (
-        <div className={cn(baseClasses, "bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400")}>
+        <div
+          className={cn(baseClasses, "bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400")}
+          aria-label="Payment activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -172,10 +201,13 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <line x1="2" x2="22" y1="10" y2="10" />
           </svg>
         </div>
-      )
+      );
     default:
       return (
-        <div className={cn(baseClasses, "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400")}>
+        <div
+          className={cn(baseClasses, "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400")}
+          aria-label="Generic activity"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -191,21 +223,23 @@ function getActivityIcon(type: ActivityType, status?: string) {
             <circle cx="12" cy="12" r="10" />
           </svg>
         </div>
-      )
+      );
   }
 }
 
-function getVariantFromStatus(status: string): "default" | "destructive" | "outline" | "secondary" | null | undefined {
+function getVariantFromStatus(
+  status: string,
+): "default" | "destructive" | "outline" | "secondary" | null | undefined {
   switch (status) {
     case "success":
-      return "default"
+      return "default";
     case "warning":
-      return "secondary"
+      return "secondary";
     case "error":
-      return "destructive"
+      return "destructive";
     case "info":
-      return "outline"
+      return "outline";
     default:
-      return "default"
+      return "default";
   }
 }
