@@ -10,10 +10,7 @@ import {
   Package2,
   Check,
   CreditCard,
-  Globe,
   Info,
-  HelpCircle,
-  AlertCircle,
   CheckCircle2,
   User,
   MapPin,
@@ -26,9 +23,7 @@ import { Form } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { PersonalInfoForm } from "@/components/imports/personal-info-form";
