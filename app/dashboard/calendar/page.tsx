@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   format,
   addDays,
@@ -11,6 +11,8 @@ import {
   parseISO,
   isSameDay,
   isValid,
+  isBefore,
+  isEqual,
 } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,15 +26,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { toast } from "@/components/ui/use-toast"; // Assuming a toast component exists
 import { DayView } from "@/components/calendar/day-view";
 import { EventForm } from "@/components/calendar/event-form";
 import { EventList } from "@/components/calendar/event-list";
 import { EventSearch } from "@/components/calendar/event-search";
 import { EventStatistics } from "@/components/calendar/event-statistics";
-import { MonthView } from "@/components/calendar/moth-view";
 import { WeekView } from "@/components/calendar/week-view";
-
-// Types
+import { MonthView } from "@/components/calendar/moth-view";
 interface Event {
   id: number;
   title: string;
@@ -161,7 +162,7 @@ const initialEvents: Event[] = [
   },
 ];
 
-// Event type definitions with colors
+// Event type definitions
 const eventTypes: EventType[] = [
   { value: "meeting", label: "Meeting", color: "#4f46e5" },
   { value: "presentation", label: "Presentation", color: "#0ea5e9" },
@@ -172,7 +173,21 @@ const eventTypes: EventType[] = [
   { value: "event", label: "Event", color: "#ec4899" },
 ];
 
+// Utility function to validate event times
+const validateEventTimes = (startTime: string, endTime: string): boolean => {
+  try {
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const [endHours, endMinutes] = endTime.split(":").map(Number);
+    const start = new Date(2025, 0, 1, startHours, startMinutes);
+    const end = new Date(2025, 0, 1, endHours, endMinutes);
+    return isBefore(start, end) || isEqual(start, end);
+  } catch {
+    return false;
+  }
+};
+
 export default function CalendarPage() {
+  // State
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedView, setSelectedView] = useState<"month" | "week" | "day">("month");
@@ -184,135 +199,199 @@ export default function CalendarPage() {
     startOfWeek(new Date(), { weekStartsOn: 0 })
   );
 
-  // Ensure dates are valid
-  const validSelectedDate = isValid(selectedDate) ? selectedDate : new Date();
-  const validWeekStartDate = isValid(weekStartDate)
-    ? weekStartDate
-    : startOfWeek(new Date(), { weekStartsOn: 0 });
+  // Memoized valid dates to prevent hook dependency issues
+  const validSelectedDate = useMemo(() => {
+    return isValid(selectedDate) ? selectedDate : new Date();
+  }, [selectedDate]);
 
-  // Get events for the selected date
+  const validWeekStartDate = useMemo(() => {
+    return isValid(weekStartDate)
+      ? weekStartDate
+      : startOfWeek(new Date(), { weekStartsOn: 0 });
+  }, [weekStartDate]);
+
+  // Memoized computations
   const eventsForSelectedDate = useMemo(() => {
     return events.filter((event) => {
-      const eventDate = parseISO(event.date);
-      return isValid(eventDate) && isSameDay(eventDate, validSelectedDate);
+      try {
+        const eventDate = parseISO(event.date);
+        return isValid(eventDate) && isSameDay(eventDate, validSelectedDate);
+      } catch {
+        return false;
+      }
     });
   }, [events, validSelectedDate]);
 
-  // Get upcoming events (sorted by date)
   const upcomingEvents = useMemo(() => {
-    return [...events]
+    const today = new Date();
+    return events
       .filter((event) => {
-        const eventDate = parseISO(event.date);
-        const today = new Date();
-        return isValid(eventDate) && eventDate >= today;
+        try {
+          const eventDate = parseISO(event.date);
+          return isValid(eventDate) && (isEqual(eventDate, today) || isBefore(today, eventDate));
+        } catch {
+          return false;
+        }
       })
-      .sort((a, b) => {
-        const dateA = parseISO(a.date);
-        const dateB = parseISO(b.date);
-        return dateA.getTime() - dateB.getTime();
-      })
+      .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
       .slice(0, 5);
   }, [events]);
 
-  // Handle date selection in calendar
+  const weekDates = useMemo(() => {
+    try {
+      return eachDayOfInterval({
+        start: validWeekStartDate,
+        end: endOfWeek(validWeekStartDate, { weekStartsOn: 0 }),
+      });
+    } catch {
+      return eachDayOfInterval({
+        start: startOfWeek(new Date(), { weekStartsOn: 0 }),
+        end: endOfWeek(new Date(), { weekStartsOn: 0 }),
+      });
+    }
+  }, [validWeekStartDate]);
+
+  // Handlers
   const handleDateSelect = useCallback((date: Date | undefined) => {
     if (date && isValid(date)) {
-      setSelectedDate(date);
+      setSelectedDate(new Date(date));
     }
   }, []);
 
-  // Handle adding a new event
-  const handleAddEvent = useCallback(
-    (newEvent: Omit<Event, "id">) => {
-      const eventWithId: Event = {
+  const handleAddEvent = useCallback((newEvent: Omit<Event, "id">) => {
+    // Validate event
+    if (!newEvent.title) {
+      toast({
+        title: "Error",
+        description: "Event title is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateEventTimes(newEvent.startTime, newEvent.endTime)) {
+      toast({
+        title: "Error",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const eventDate = parseISO(newEvent.date);
+      if (!isValid(eventDate)) {
+        toast({
+          title: "Error",
+          description: "Invalid event date.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Invalid date format.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEvents((prevEvents) => [
+      ...prevEvents,
+      {
         ...newEvent,
-        id: events.length + 1,
-      };
-      setEvents((prevEvents) => [...prevEvents, eventWithId]);
-      setIsAddEventOpen(false);
-    },
-    [events]
-  );
+        id: prevEvents.length > 0 ? Math.max(...prevEvents.map((e) => e.id)) + 1 : 1,
+      },
+    ]);
+    setIsAddEventOpen(false);
+    toast({
+      title: "Success",
+      description: "Event added successfully.",
+    });
+  }, []);
 
-  // Handle event search
   const handleSearch = useCallback(() => {
-    let filtered = [...events];
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (event) =>
-          event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (event.description &&
-            event.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+    try {
+      const filtered = events.filter((event) => {
+        const matchesQuery = searchQuery
+          ? event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event.description &&
+              event.description.toLowerCase().includes(searchQuery.toLowerCase()))
+          : true;
+        const matchesType = selectedType ? event.type === selectedType : true;
+        return matchesQuery && matchesType;
+      });
+      setFilteredEvents(filtered);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to search events.",
+        variant: "destructive",
+      });
+      setFilteredEvents([]);
     }
-
-    if (selectedType) {
-      filtered = filtered.filter((event) => event.type === selectedType);
-    }
-
-    setFilteredEvents(filtered);
   }, [events, searchQuery, selectedType]);
 
-  // Reset search filters
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedType(null);
     setFilteredEvents([]);
   }, []);
 
-  // Navigate to previous day/week/month
   const navigatePrevious = useCallback(() => {
-    if (selectedView === "day") {
-      setSelectedDate(subDays(validSelectedDate, 1));
-    } else if (selectedView === "week") {
-      setWeekStartDate(subDays(validWeekStartDate, 7));
-    } else {
-      const prevMonth = new Date(validSelectedDate);
-      prevMonth.setMonth(prevMonth.getMonth() - 1);
-      setSelectedDate(prevMonth);
+    switch (selectedView) {
+      case "day":
+        setSelectedDate(subDays(validSelectedDate, 1));
+        break;
+      case "week":
+        setWeekStartDate(subDays(validWeekStartDate, 7));
+        break;
+      case "month":
+        setSelectedDate(new Date(validSelectedDate.getFullYear(), validSelectedDate.getMonth() - 1, 1));
+        break;
     }
   }, [selectedView, validSelectedDate, validWeekStartDate]);
 
-  // Navigate to next day/week/month
   const navigateNext = useCallback(() => {
-    if (selectedView === "day") {
-      setSelectedDate(addDays(validSelectedDate, 1));
-    } else if (selectedView === "week") {
-      setWeekStartDate(addDays(validWeekStartDate, 7));
-    } else {
-      const nextMonth = new Date(validSelectedDate);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      setSelectedDate(nextMonth);
+    switch (selectedView) {
+      case "day":
+        setSelectedDate(addDays(validSelectedDate, 1));
+        break;
+      case "week":
+        setWeekStartDate(addDays(validWeekStartDate, 7));
+        break;
+      case "month":
+        setSelectedDate(new Date(validSelectedDate.getFullYear(), validSelectedDate.getMonth() + 1, 1));
+        break;
     }
   }, [selectedView, validSelectedDate, validWeekStartDate]);
 
-  // Navigate to today
   const goToToday = useCallback(() => {
     const today = new Date();
     setSelectedDate(today);
     setWeekStartDate(startOfWeek(today, { weekStartsOn: 0 }));
   }, []);
 
-  // Format date for display
-  const formatDate = useCallback((dateString: string) => {
-    const date = parseISO(dateString);
-    return isValid(date) ? format(date, "MMM dd, yyyy") : dateString;
+  const formatDate = useCallback((dateString: string): string => {
+    try {
+      const date = parseISO(dateString);
+      return isValid(date) ? format(date, "MMM dd, yyyy") : "Invalid Date";
+    } catch {
+      return "Invalid Date";
+    }
   }, []);
 
-  // Get week dates for week view
-  const weekDates = useMemo(() => {
-    return eachDayOfInterval({
-      start: validWeekStartDate,
-      end: endOfWeek(validWeekStartDate, { weekStartsOn: 0 }),
-    });
-  }, [validWeekStartDate]);
+  // Effect to trigger search when query or type changes
+  useEffect(() => {
+    handleSearch();
+  }, [searchQuery, selectedType, handleSearch]);
 
   return (
     <div className="container mx-auto py-6 space-y-6 text-white/80">
-      <div className="flex items-center justify-between">
+      <header className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-white">Calendar</h1>
-        <div className="flex items-center gap-2">
+        <nav className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -327,7 +406,7 @@ export default function CalendarPage() {
             size="icon"
             onClick={navigatePrevious}
             className="border-white/10 text-white/80 hover:bg-white/5"
-            aria-label="Go to previous period"
+            aria-label={`Go to previous ${selectedView}`}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -336,11 +415,15 @@ export default function CalendarPage() {
             size="icon"
             onClick={navigateNext}
             className="border-white/10 text-white/80 hover:bg-white/5"
-            aria-label="Go to next period"
+            aria-label={`Go to next ${selectedView}`}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <span className="font-medium mx-2 text-white/90">
+          <span
+            className="font-medium mx-2 text-white/90"
+            aria-live="polite"
+            aria-label={`Current ${selectedView} view`}
+          >
             {selectedView === "day" && format(validSelectedDate, "MMMM d, yyyy")}
             {selectedView === "week" &&
               `${format(validWeekStartDate, "MMM d")} - ${format(
@@ -363,7 +446,7 @@ export default function CalendarPage() {
               <DialogHeader>
                 <DialogTitle className="text-white">Create New Event</DialogTitle>
                 <DialogDescription className="text-white/60">
-                  Add a new event to your calendar. Fill in the details and click save when you&apos;re done.
+                  Add a new event to your calendar. Fill in the details and click save.
                 </DialogDescription>
               </DialogHeader>
               <EventForm
@@ -373,75 +456,72 @@ export default function CalendarPage() {
               />
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+        </nav>
+      </header>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2 border-white/10 bg-white/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-white">Schedule</CardTitle>
-                <CardDescription className="text-white/60">
-                  View and manage your events
-                </CardDescription>
+      <main className="grid gap-6 md:grid-cols-3">
+        <section className="md:col-span-2">
+          <Card className="border-white/10 bg-white/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Schedule</CardTitle>
+                  <CardDescription className="text-white/60">
+                    View and manage your events
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as "month" | "week" | "day")} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4 border-white/10 bg-white/5">
-                <TabsTrigger
-                  value="month"
-                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  aria-label="Month view"
-                >
-                  Month
-                </TabsTrigger>
-                <TabsTrigger
-                  value="week"
-                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  aria-label="Week view"
-                >
-                  Week
-                </TabsTrigger>
-                <TabsTrigger
-                  value="day"
-                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  aria-label="Day view"
-                >
-                  Day
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="month" className="mt-0">
-                <MonthView
-                  selectedDate={validSelectedDate}
-                  onDateSelect={handleDateSelect}
-                  events={events}
-                  eventTypes={eventTypes}
-                />
-              </TabsContent>
-              <TabsContent value="week" className="mt-0">
-                <WeekView
-                  weekDates={weekDates}
-                  events={events}
-                  onDateSelect={handleDateSelect}
-                  selectedDate={validSelectedDate}
-                  eventTypes={eventTypes}
-                />
-              </TabsContent>
-              <TabsContent value="day" className="mt-0">
-                <DayView
-                  selectedDate={validSelectedDate}
-                  events={eventsForSelectedDate}
-                  eventTypes={eventTypes}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <Tabs
+                value={selectedView}
+                onValueChange={(value) =>
+                  setSelectedView(value as "month" | "week" | "day")
+                }
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-3 mb-4 border-white/10 bg-white/5">
+                  {(["month", "week", "day"] as const).map((view) => (
+                    <TabsTrigger
+                      key={view}
+                      value={view}
+                      className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white capitalize"
+                      aria-label={`${view} view`}
+                    >
+                      {view}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <TabsContent value="month" className="mt-0">
+                  <MonthView
+                    selectedDate={validSelectedDate}
+                    onDateSelect={handleDateSelect}
+                    events={events}
+                    eventTypes={eventTypes}
+                  />
+                </TabsContent>
+                <TabsContent value="week" className="mt-0">
+                  <WeekView
+                    weekDates={weekDates}
+                    events={events}
+                    onDateSelect={handleDateSelect}
+                    selectedDate={validSelectedDate}
+                    eventTypes={eventTypes}
+                  />
+                </TabsContent>
+                <TabsContent value="day" className="mt-0">
+                  <DayView
+                    selectedDate={validSelectedDate}
+                    events={eventsForSelectedDate}
+                    eventTypes={eventTypes}
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </section>
 
-        <div className="space-y-6">
+        <aside className="space-y-6">
           <Card className="border-white/10 bg-white/5">
             <CardHeader>
               <CardTitle className="text-white">Upcoming Events</CardTitle>
@@ -491,8 +571,8 @@ export default function CalendarPage() {
               <EventStatistics events={events} eventTypes={eventTypes} />
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </aside>
+      </main>
     </div>
   );
 }

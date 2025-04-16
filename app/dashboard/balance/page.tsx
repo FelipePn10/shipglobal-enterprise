@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { BalanceClient } from "@/components/balance/balance-client";
 import { DollarSign, Euro, Currency } from "lucide-react";
-import { CurrencyCode, BalanceData, Transaction } from "@/types/balance";
+import { BalanceData, Transaction } from "@/types/balance";
 
 async function fetchBalanceData(userId: number): Promise<{
   balances: BalanceData;
