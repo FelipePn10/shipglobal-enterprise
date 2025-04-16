@@ -22,6 +22,33 @@ export interface Transaction {
   updatedAt: Date;
 }
 
+export interface ImportOrder {
+    _id?: ObjectId;
+    importId: string;
+    userId: number;
+    companyId?: number;
+    title: string;
+    status: 'draft' | 'pending' | 'processing' | 'completed' | 'failed';
+    origin: string;
+    destination: string;
+    progress: number;
+    eta?: string;
+    items: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      price: number;
+      currency: string;
+    }>;
+    metadata: {
+      mysqlImportId?: number;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
 export interface Order {
   _id?: ObjectId;
   userId: number;

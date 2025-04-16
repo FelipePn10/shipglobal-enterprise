@@ -3,23 +3,11 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { imports } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { ImportOrder } from "@/lib/mongoModels";
+import clientPromise from "@/lib/mongo";
 
-// Define the schema for the import data response
-const ImportSchema = z.object({
-  importId: z.string().uuid(),
-  fileName: z.string().min(1),
-  status: z.enum(["pending", "processing", "completed", "failed"]),
-  createdAt: z.date(),
-  updatedAt: z.date().nullable(),
-  totalRecords: z.number().int().nonnegative(),
-  processedRecords: z.number().int().nonnegative(),
-  errorMessage: z.string().nullable(),
-});
+const IdSchema = z.string().min(1);
 
-// Input validation schema for the ID
-const IdSchema = z.string().uuid("Invalid import ID format");
-
-// GET handler to fetch import details by ID
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -29,71 +17,47 @@ export async function GET(
     const parsedId = IdSchema.safeParse(params.id);
     if (!parsedId.success) {
       return NextResponse.json(
-        {
-          error: "Invalid import ID",
-          details: parsedId.error.flatten().formErrors,
-        },
+        { error: "Invalid import ID", details: parsedId.error.flatten() },
         { status: 400 }
       );
     }
 
-    const id = Number(parsedId.data);
+    const id = parsedId.data;
 
-    // Query the database with explicit field selection
-    const importData = await db
-      .select({
-        importId: imports.id,
-        // fileName: imports.file_name,
-        status: imports.status,
-        // createdAt: imports.created_at,
-        // updatedAt: imports.updated_at,
-        // totalRecords: imports.total_records,
-        // processedRecords: imports.processed_records,
-        // errorMessage: imports.error_message,
-      })
-      .from(imports)
-      .where(eq(imports.id, id))
-      .limit(1);
+    // Connect to MongoDB
+    const mongoClient = await clientPromise;
+    const mongoDb = mongoClient.db();
+    const importsCollection = mongoDb.collection<ImportOrder>("imports");
 
-    // Check if data exists
-    if (importData.length === 0) {
+    // Query both databases
+    const [mysqlImport, mongoImport] = await Promise.all([
+      // MySQL query
+      db
+        .select()
+        .from(imports)
+        .where(eq(imports.importId, id))
+        .limit(1),
+      
+      // MongoDB query
+      importsCollection.findOne({ importId: id })
+    ]);
+
+    if (!mysqlImport.length && !mongoImport) {
       return NextResponse.json(
         { error: `Import with ID ${id} not found` },
         { status: 404 }
       );
     }
 
-    // Validate and transform the data
-    const validatedData = ImportSchema.safeParse(importData[0]);
-    if (!validatedData.success) {
-      console.error("Data validation failed:", validatedData.error);
-      return NextResponse.json(
-        { error: "Invalid data format from database" },
-        { status: 500 }
-      );
-    }
-
-    // Return the validated data
-    return NextResponse.json(validatedData.data, {
-      status: 200,
-      headers: {
-        "Cache-Control": "no-store",
-        "Content-Type": "application/json",
-      },
+    return NextResponse.json({
+      mysql: mysqlImport[0] || null,
+      mongo: mongoImport || null
     });
   } catch (error) {
     console.error("Error fetching import by ID:", {
       id: params.id,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-
-    if (error instanceof Error && error.message.includes("database")) {
-      return NextResponse.json(
-        { error: "Database connection failed" },
-        { status: 503 }
-      );
-    }
 
     return NextResponse.json(
       { error: "Internal server error" },
@@ -102,42 +66,48 @@ export async function GET(
   }
 }
 
-// DELETE handler to remove an import by ID
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    // Validate the ID
     const parsedId = IdSchema.safeParse(params.id);
     if (!parsedId.success) {
       return NextResponse.json(
-        {
-          error: "Invalid import ID",
-          details: parsedId.error.flatten().formErrors,
-        },
+        { error: "Invalid import ID", details: parsedId.error.flatten() },
         { status: 400 }
       );
     }
 
-    const id = Number(parsedId.data);
+    const id = parsedId.data;
 
-    // Check if import exists first
-    const existingImport = await db
-      .select()
-      .from(imports)
-      .where(eq(imports.id, id))
-      .limit(1);
+    // Connect to MongoDB
+    const mongoClient = await clientPromise;
+    const mongoDb = mongoClient.db();
+    const importsCollection = mongoDb.collection<ImportOrder>("imports");
 
-    if (existingImport.length === 0) {
+    // Check if exists in either database
+    const [mysqlImport, mongoImport] = await Promise.all([
+      db
+        .select()
+        .from(imports)
+        .where(eq(imports.importId, id))
+        .limit(1),
+      importsCollection.findOne({ importId: id })
+    ]);
+
+    if (!mysqlImport.length && !mongoImport) {
       return NextResponse.json(
         { error: `Import with ID ${id} not found` },
         { status: 404 }
       );
     }
 
-    // Attempt to delete the import
-    await db.delete(imports).where(eq(imports.id, id)).execute();
+    // Delete from both databases
+    await Promise.all([
+      mysqlImport.length ? db.delete(imports).where(eq(imports.importId, id)) : Promise.resolve(),
+      mongoImport ? importsCollection.deleteOne({ importId: id }) : Promise.resolve()
+    ]);
 
     return NextResponse.json(
       { message: `Import ${id} deleted successfully` },
@@ -147,7 +117,6 @@ export async function DELETE(
     console.error("Error deleting import by ID:", {
       id: params.id,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(
