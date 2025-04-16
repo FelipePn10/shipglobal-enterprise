@@ -5,9 +5,7 @@ import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode } from "@/types/balance";
-
-import { Transaction as MongoTransaction } from "@/lib/mongoModels";
-import clientPromise from "@/lib/mongo";
+import { TransactionCollection } from "@/lib/mongo/collections/transactions";
 
 interface RefundRequest {
   currency: CurrencyCode;
@@ -31,32 +29,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { currency, amount, paymentIntentId, refundId } = body as RefundRequest;
 
-    // Validate currency
+    // Validation
     if (!["USD", "EUR", "CNY", "JPY"].includes(currency)) {
       return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
     }
 
-    // Validate amount
     if (typeof amount !== "number" || amount <= 0 || !Number.isFinite(amount)) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    // Validate payment IDs
     if (typeof paymentIntentId !== "string" || !paymentIntentId.trim()) {
       return NextResponse.json({ error: "Invalid paymentIntentId" }, { status: 400 });
     }
+
     if (typeof refundId !== "string" || !refundId.trim()) {
       return NextResponse.json({ error: "Invalid refundId" }, { status: 400 });
     }
 
-    // Connect to MongoDB
-    const mongoClient = await clientPromise;
-    const mongoDb = mongoClient.db();
-    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
-
-    // Start transaction (MySQL only)
+    // Process in transaction
     const mysqlResults = await db.transaction(async (tx) => {
-      // Check existing balance
+      // Check and update balance
       const existingBalance = await tx
         .select({ amount: balances.amount })
         .from(balances)
@@ -72,7 +64,7 @@ export async function POST(req: Request) {
             lastUpdated: new Date(),
           })
           .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
-        
+
         [updatedBalance] = (await tx
           .select()
           .from(balances)
@@ -97,7 +89,7 @@ export async function POST(req: Request) {
           .where(eq(balances.id, Number(insertedId[0].id)));
       }
 
-      // Record transaction in MySQL
+      // Create transaction in MySQL
       const transactionIdResult = await tx
         .insert(transactions)
         .values({
@@ -112,18 +104,16 @@ export async function POST(req: Request) {
         })
         .$returningId();
       
-      const transactionId = transactionIdResult[0].id;
-
       const [newTransaction] = await tx
         .select()
         .from(transactions)
-        .where(eq(transactions.id, transactionId));
+        .where(eq(transactions.id, transactionIdResult[0].id));
 
       return { updatedBalance, newTransaction };
     });
 
-    // Record transaction in MongoDB
-    const mongoTransaction: MongoTransaction = {
+    // Create transaction in MongoDB
+    const mongoTransaction = await TransactionCollection.create({
       userId,
       type: "refund",
       amount,
@@ -135,24 +125,23 @@ export async function POST(req: Request) {
       metadata: {
         mysqlTransactionId: mysqlResults.newTransaction.id,
         originalPaymentIntentId: paymentIntentId,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
+        ipAddress: req.headers.get('x-forwarded-for') || '',
+        userAgent: req.headers.get('user-agent') || ''
+      }
+    });
 
     return NextResponse.json({
       balance: {
         amount: parseFloat(mysqlResults.updatedBalance.amount),
+        currency: currency,
         lastUpdated: mysqlResults.updatedBalance.lastUpdated.toISOString(),
       },
       transaction: {
         id: `tx-${mysqlResults.newTransaction.id}`,
-        mongoId: mongoResult.insertedId.toString(),
+        mongoId: mongoTransaction._id.toString(),
         type: mysqlResults.newTransaction.type,
         amount: parseFloat(mysqlResults.newTransaction.amount),
-        currency: mysqlResults.newTransaction.currency,
+        currency: mysqlResults.newTransaction.currency as CurrencyCode,
         date: mysqlResults.newTransaction.date.toISOString(),
         status: mysqlResults.newTransaction.status,
         description: mysqlResults.newTransaction.description,
@@ -163,7 +152,7 @@ export async function POST(req: Request) {
     console.error("Refund Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to process refund";
     return NextResponse.json(
-      { error: errorMessage },
+      { error: errorMessage, details: error instanceof Error ? error.stack : undefined },
       { status: 500 }
     );
   }

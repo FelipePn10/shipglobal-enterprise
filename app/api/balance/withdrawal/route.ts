@@ -5,8 +5,7 @@ import { db } from "@/lib/db";
 import { balances, transactions, users } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode } from "@/types/balance";
-import { Transaction as MongoTransaction } from "@/lib/mongoModels";
-import clientPromise from "@/lib/mongo";
+import { TransactionCollection } from "@/lib/mongo/collections/transactions";
 
 interface WithdrawalRequest {
   currency: CurrencyCode;
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
-    // Verificar informações do usuário no MySQL
+    // Get user info from MySQL
     const user = await db
       .select({
         id: users.id,
@@ -50,27 +49,20 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { currency, amount, payoutId, targetAccount } = body as WithdrawalRequest;
 
-    // Validate currency
+    // Validation
     if (!["USD", "EUR", "CNY", "JPY"].includes(currency)) {
       return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
     }
 
-    // Validate amount
     if (typeof amount !== "number" || amount <= 0 || !Number.isFinite(amount)) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    // Validate payout ID
     if (typeof payoutId !== "string" || !payoutId.trim()) {
       return NextResponse.json({ error: "Invalid payout ID" }, { status: 400 });
     }
 
-    // Connect to MongoDB
-    const mongoClient = await clientPromise;
-    const mongoDb = mongoClient.db();
-    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
-
-    // Start transaction (MySQL only)
+    // Process in transaction
     const mysqlResults = await db.transaction(async (tx) => {
       // Check balance
       const existingBalance = await tx
@@ -102,7 +94,7 @@ export async function POST(req: Request) {
         throw new Error("Failed to retrieve updated balance");
       }
 
-      // Record transaction in MySQL
+      // Create transaction in MySQL
       const transactionIdArray = await tx
         .insert(transactions)
         .values({
@@ -115,24 +107,17 @@ export async function POST(req: Request) {
           description: `Withdrawal of ${amount.toFixed(2)} ${currency} (Payout ID: ${payoutId})`,
         })
         .$returningId();
-
-      const transactionId = transactionIdArray[0].id;
-
-      // Get the complete transaction record
+      
       const [newTransaction] = await tx
         .select()
         .from(transactions)
-        .where(eq(transactions.id, transactionId));
-
-      if (!newTransaction) {
-        throw new Error("Failed to retrieve created transaction");
-      }
+        .where(eq(transactions.id, transactionIdArray[0].id));
 
       return { updatedBalance, newTransaction };
     });
 
-    // Record transaction in MongoDB
-    const mongoTransaction: MongoTransaction = {
+    // Create transaction in MongoDB
+    const mongoTransaction = await TransactionCollection.create({
       userId,
       type: "withdrawal",
       amount,
@@ -145,26 +130,24 @@ export async function POST(req: Request) {
         mysqlUserId: userId,
         userEmail: user[0].email,
         userName: `${user[0].firstName} ${user[0].lastName}`,
-        targetAccount: targetAccount || undefined,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
+        targetAccount,
+        ipAddress: req.headers.get('x-forwarded-for') || '',
+        userAgent: req.headers.get('user-agent') || ''
+      }
+    });
 
     return NextResponse.json({
       balance: {
         amount: parseFloat(mysqlResults.updatedBalance.amount),
-        currency: mysqlResults.updatedBalance.currency,
+        currency: mysqlResults.updatedBalance.currency as CurrencyCode,
         lastUpdated: mysqlResults.updatedBalance.lastUpdated.toISOString(),
       },
       transaction: {
         id: `tx-${mysqlResults.newTransaction.id}`,
-        mongoId: mongoResult.insertedId.toString(),
+        mongoId: mongoTransaction._id.toString(),
         type: mysqlResults.newTransaction.type,
         amount: parseFloat(mysqlResults.newTransaction.amount),
-        currency: mysqlResults.newTransaction.currency,
+        currency: mysqlResults.newTransaction.currency as CurrencyCode,
         date: mysqlResults.newTransaction.date.toISOString(),
         status: mysqlResults.newTransaction.status,
         description: mysqlResults.newTransaction.description,

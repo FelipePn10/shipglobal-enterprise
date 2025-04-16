@@ -5,8 +5,9 @@ import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode, PaymentCurrency } from "@/types/balance";
-import { Transaction as MongoTransaction } from "@/lib/mongoModels";
+import { Transaction as MongoTransaction, TransactionStatus } from "@/lib/mongoModels";
 import clientPromise from "@/lib/mongo";
+import { TransactionCollection } from "@/lib/mongo/collections/transactions";
 
 interface DepositRequest {
   currency: CurrencyCode;
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
           amount: amount.toFixed(2),
           currency,
           date: new Date(),
-          status: "completed",
+          status: "completed" as TransactionStatus,
           description: `Deposit of ${amount.toFixed(2)} ${currency}`,
           paymentIntentId,
         })
@@ -153,23 +154,45 @@ export async function POST(req: Request) {
     });
 
     // Record transaction in MongoDB
-    const mongoTransaction: MongoTransaction = {
+    const mongoTransaction = await TransactionCollection.create({
       userId,
       type: "deposit",
       amount,
       currency,
-      status: "completed",
-      paymentIntentId,
+      status: "completed" as TransactionStatus,
       description: `Deposit of ${amount.toFixed(2)} ${currency}`,
-      metadata: {
-        mysqlTransactionId: mysqlResults.newTransaction.id,
-        paymentCurrency,
-      },
       createdAt: new Date(),
       updatedAt: new Date(),
+      metadata: {
+        mysqlTransactionId: mysqlResults.newTransaction.id,
+        mysqlUserId: userId,
+        paymentIntentId,
+        paymentCurrency,
+        ipAddress: req.headers.get('x-forwarded-for') || '',
+        userAgent: req.headers.get('user-agent') || ''
+      }
+    });
+    const { _id, ...transactionData } = mongoTransaction; // Exclude _id field
+    const completeTransactionData: MongoTransaction = {
+      userId,
+      type: "deposit" as const,
+      amount,
+      currency,
+      status: "completed" as const,
+      description: `Deposit of ${amount.toFixed(2)} ${currency}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: {
+        mysqlTransactionId: mysqlResults.newTransaction.id,
+        mysqlUserId: userId,
+        paymentIntentId,
+        paymentCurrency,
+        ipAddress: req.headers.get('x-forwarded-for') || '',
+        userAgent: req.headers.get('user-agent') || ''
+      }
     };
-
-    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
+    
+    const mongoResult = await transactionsCollection.insertOne(completeTransactionData);
 
     return NextResponse.json({
       balance: {

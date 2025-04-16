@@ -18,4 +18,7 @@ export interface Transaction {
   description?: string;
   paymentIntentId?: string;
   targetCurrency?: CurrencyCode;
+  createdAt?: Date;
+  updatedAt?: Date;
+  metadata?: Record<string, any>;
 }
