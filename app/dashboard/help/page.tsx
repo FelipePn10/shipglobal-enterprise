@@ -222,7 +222,7 @@ export default function HelpPage() {
                 </div>
                 <h3 className="text-xl font-medium text-white mb-2">No articles found</h3>
                 <p className="text-white/60 max-w-md">
-                  We couldn't find any articles matching your search. Try using different keywords or browse our
+                  We couldnt find any articles matching your search. Try using different keywords or browse our
                   categories.
                 </p>
               </div>
@@ -402,7 +402,7 @@ export default function HelpPage() {
                 <h4 className="text-white/90 font-medium mb-2">What is Global Reach Solutions?</h4>
                 <p className="text-white/70">
                   Global Reach Solutions is an international product redirection service that helps individuals and
-                  businesses access products from retailers worldwide that don't offer direct international shipping. We
+                  businesses access products from retailers worldwide that dont offer direct international shipping. We
                   provide you with local addresses in multiple countries, receive your packages, and forward them to
                   your location anywhere in the world.
                 </p>
@@ -412,7 +412,7 @@ export default function HelpPage() {
                 <h4 className="text-white/90 font-medium mb-2">How do I track my shipments?</h4>
                 <p className="text-white/70">
                   You can track all your shipments in real-time through your dashboard. Once your package is shipped,
-                  you'll receive a tracking number and link via email. You can also log into your account to view
+                  youll receive a tracking number and link via email. You can also log into your account to view
                   detailed status updates throughout the delivery process.
                 </p>
               </div>
@@ -429,7 +429,7 @@ export default function HelpPage() {
               <div className="bg-white/[0.03] p-4 rounded-md">
                 <h4 className="text-white/90 font-medium mb-2">How are customs duties and taxes handled?</h4>
                 <p className="text-white/70">
-                  Import duties and taxes are determined by your country's customs authorities and are typically based
+                  Import duties and taxes are determined by your countrys customs authorities and are typically based
                   on the value and type of items. We provide estimated duty and tax calculations before shipping, and
                   you can choose to pre-pay these fees or pay upon delivery, depending on the destination country.
                 </p>
@@ -439,7 +439,7 @@ export default function HelpPage() {
                 <h4 className="text-white/90 font-medium mb-2">Can I consolidate multiple packages?</h4>
                 <p className="text-white/70">
                   Yes! Our package consolidation service allows you to combine multiple packages into a single shipment,
-                  potentially saving significant costs on international shipping. We'll hold your packages for up to 30
+                  potentially saving significant costs on international shipping. Well hold your packages for up to 30
                   days at no extra charge while waiting for all items to arrive.
                 </p>
               </div>
@@ -455,7 +455,7 @@ export default function HelpPage() {
             </div>
 
             <div className="mt-6 text-center">
-              <p className="text-white/70 mb-4">Can't find what you're looking for?</p>
+              <p className="text-white/70 mb-4">Cant find what youre looking for?</p>
               <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Contact Support

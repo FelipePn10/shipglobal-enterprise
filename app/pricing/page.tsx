@@ -1,20 +1,35 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Pacifico } from "next/font/google"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Check } from "lucide-react"
-import PageHeader from "@/components/layouts/page-header"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import FAQAccordion from "@/components/services/faq-accordion"
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Check } from "lucide-react";
+import PageHeader from "@/components/layouts/page-header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FAQAccordion from "@/components/services/faq-accordion";
 
-const pacifico = Pacifico({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-pacifico",
-})
+// Types
+interface Plan {
+  title: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  buttonText: string;
+  popular: boolean;
+}
+
+interface AdditionalService {
+  service: string;
+  description: string;
+  price: string;
+}
+
+interface FAQ {
+  question: string;
+  answer: string;
+}
 
 export default function PricingPage() {
   const fadeInVariants = {
@@ -28,9 +43,9 @@ export default function PricingPage() {
         ease: [0.25, 0.4, 0.25, 1],
       },
     }),
-  }
+  };
 
-  const personalPlans = [
+  const personalPlans: Plan[] = [
     {
       title: "Basic",
       price: "$9.99",
@@ -79,9 +94,9 @@ export default function PricingPage() {
       buttonText: "Get Elite",
       popular: false,
     },
-  ]
+  ];
 
-  const businessPlans = [
+  const businessPlans: Plan[] = [
     {
       title: "Business Starter",
       price: "$49.99",
@@ -134,9 +149,9 @@ export default function PricingPage() {
       buttonText: "Contact Sales",
       popular: false,
     },
-  ]
+  ];
 
-  const additionalServices = [
+  const additionalServices: AdditionalService[] = [
     {
       service: "Extra Storage",
       description: "Extended storage beyond plan limits",
@@ -167,9 +182,9 @@ export default function PricingPage() {
       description: "Priority handling of your package",
       price: "$10 per package",
     },
-  ]
+  ];
 
-  const faqs = [
+  const faqs: FAQ[] = [
     {
       question: "Can I change my plan later?",
       answer:
@@ -200,11 +215,14 @@ export default function PricingPage() {
       answer:
         "We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for business accounts. All payments are processed securely through our payment partners.",
     },
-  ]
+  ];
 
   return (
     <main className="bg-[#030303] text-white">
-      <PageHeader title="Pricing" subtitle="Transparent pricing for all your global shipping needs" />
+      <PageHeader
+        title="Pricing"
+        subtitle="Transparent pricing for all your global shipping needs"
+      />
 
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 md:px-6">
@@ -214,67 +232,75 @@ export default function PricingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto mb-12"
+            className="mx-auto mb-12 max-w-3xl text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="mb-6 text-3xl font-bold md:text-4xl">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
                 Choose Your Plan
               </span>
             </h2>
 
-            <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-rose-500 mx-auto mb-8" />
+            <div className="mx-auto mb-8 h-1 w-20 bg-gradient-to-r from-indigo-500 to-rose-500" />
 
-            <p className="text-white/70 leading-relaxed">
-              Select the plan that best fits your international shopping needs, whether youre an individual shopper or
-              a business.
+            <p className="leading-relaxed text-white/70">
+              Select the plan that best fits your international shopping needs,
+              whether you&apos;re an individual shopper or a business.
             </p>
           </motion.div>
 
-          <Tabs defaultValue="personal" className="w-full max-w-5xl mx-auto">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12">
+          <Tabs defaultValue="personal" className="mx-auto w-full max-w-5xl">
+            <TabsList className="mx-auto mb-12 grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="business">Business</TabsTrigger>
             </TabsList>
 
             <TabsContent value="personal" className="mt-0">
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid gap-8 md:grid-cols-3">
                 {personalPlans.map((plan, index) => (
                   <motion.div
-                    key={index}
+                    key={plan.title}
                     custom={index + 1}
                     variants={fadeInVariants}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
                     className={cn(
-                      "bg-white/[0.03] border border-white/[0.08] rounded-xl p-6 relative",
-                      plan.popular && "border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]",
+                      "relative rounded-xl border border-white/[0.08] bg-white/[0.03] p-6",
+                      plan.popular &&
+                        "border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                     )}
                   >
                     {plan.popular && (
-                      <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                      <div className="absolute right-0 top-0 rounded-bl-lg rounded-tr-lg bg-indigo-500 px-3 py-1 text-xs font-bold text-white">
                         Most Popular
                       </div>
                     )}
 
-                    <h3 className={cn("text-2xl font-semibold mb-2 text-white/90", plan.popular && "text-indigo-400")}>
+                    <h3
+                      className={cn(
+                        "mb-2 text-2xl font-semibold text-white/90",
+                        plan.popular && "text-indigo-400"
+                      )}
+                    >
                       {plan.title}
                     </h3>
 
-                    <div className="flex items-baseline mb-4">
-                      <span className="text-3xl font-bold text-white">{plan.price}</span>
-                      <span className="text-white/60 ml-2">{plan.period}</span>
+                    <div className="mb-4 flex items-baseline">
+                      <span className="text-3xl font-bold text-white">
+                        {plan.price}
+                      </span>
+                      <span className="ml-2 text-white/60">{plan.period}</span>
                     </div>
 
-                    <p className="text-white/70 mb-6">{plan.description}</p>
+                    <p className="mb-6 text-white/70">{plan.description}</p>
 
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
+                    <ul className="mb-8 space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
                           <Check
                             className={cn(
-                              "h-5 w-5 mt-0.5 flex-shrink-0",
-                              plan.popular ? "text-indigo-400" : "text-white/60",
+                              "mt-0.5 h-5 w-5 flex-shrink-0",
+                              plan.popular ? "text-indigo-400" : "text-white/60"
                             )}
                           />
                           <span className="text-white/70">{feature}</span>
@@ -287,9 +313,10 @@ export default function PricingPage() {
                         className={cn(
                           "w-full",
                           plan.popular
-                            ? "bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white"
-                            : "bg-white/[0.05] hover:bg-white/[0.08] text-white",
+                            ? "bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
+                            : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
                         )}
+                        aria-label={`Get started with ${plan.title} plan`}
                       >
                         {plan.buttonText}
                       </Button>
@@ -300,44 +327,52 @@ export default function PricingPage() {
             </TabsContent>
 
             <TabsContent value="business" className="mt-0">
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid gap-8 md:grid-cols-3">
                 {businessPlans.map((plan, index) => (
                   <motion.div
-                    key={index}
+                    key={plan.title}
                     custom={index + 1}
                     variants={fadeInVariants}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
                     className={cn(
-                      "bg-white/[0.03] border border-white/[0.08] rounded-xl p-6 relative",
-                      plan.popular && "border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]",
+                      "relative rounded-xl border border-white/[0.08] bg-white/[0.03] p-6",
+                      plan.popular &&
+                        "border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                     )}
                   >
                     {plan.popular && (
-                      <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                      <div className="absolute right-0 top-0 rounded-bl-lg rounded-tr-lg bg-indigo-500 px-3 py-1 text-xs font-bold text-white">
                         Most Popular
                       </div>
                     )}
 
-                    <h3 className={cn("text-2xl font-semibold mb-2 text-white/90", plan.popular && "text-indigo-400")}>
+                    <h3
+                      className={cn(
+                        "mb-2 text-2xl font-semibold text-white/90",
+                        plan.popular && "text-indigo-400"
+                      )}
+                    >
                       {plan.title}
                     </h3>
 
-                    <div className="flex items-baseline mb-4">
-                      <span className="text-3xl font-bold text-white">{plan.price}</span>
-                      <span className="text-white/60 ml-2">{plan.period}</span>
+                    <div className="mb-4 flex items-baseline">
+                      <span className="text-3xl font-bold text-white">
+                        {plan.price}
+                      </span>
+                      <span className="ml-2 text-white/60">{plan.period}</span>
                     </div>
 
-                    <p className="text-white/70 mb-6">{plan.description}</p>
+                    <p className="mb-6 text-white/70">{plan.description}</p>
 
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
+                    <ul className="mb-8 space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
                           <Check
                             className={cn(
-                              "h-5 w-5 mt-0.5 flex-shrink-0",
-                              plan.popular ? "text-indigo-400" : "text-white/60",
+                              "mt-0.5 h-5 w-5 flex-shrink-0",
+                              plan.popular ? "text-indigo-400" : "text-white/60"
                             )}
                           />
                           <span className="text-white/70">{feature}</span>
@@ -345,14 +380,22 @@ export default function PricingPage() {
                       ))}
                     </ul>
 
-                    <Link href={plan.title === "Business Enterprise" ? "/contact" : "/auth/register"} className="block">
+                    <Link
+                      href={
+                        plan.title === "Business Enterprise"
+                          ? "/contact"
+                          : "/auth/register"
+                      }
+                      className="block"
+                    >
                       <Button
                         className={cn(
                           "w-full",
                           plan.popular
-                            ? "bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white"
-                            : "bg-white/[0.05] hover:bg-white/[0.08] text-white",
+                            ? "bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
+                            : "bg-white/[0.05] text-white hover:bg-white/[0.08]"
                         )}
+                        aria-label={`Get started with ${plan.title} plan`}
                       >
                         {plan.buttonText}
                       </Button>
@@ -365,7 +408,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-white/[0.01]">
+      <section className="bg-white/[0.01] py-16 md:py-24">
         <div className="container mx-auto px-4 md:px-6">
           <motion.div
             custom={0}
@@ -373,18 +416,19 @@ export default function PricingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto mb-12"
+            className="mx-auto mb-12 max-w-3xl text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="mb-6 text-3xl font-bold md:text-4xl">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
                 Additional Services
               </span>
             </h2>
 
-            <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-rose-500 mx-auto mb-8" />
+            <div className="mx-auto mb-8 h-1 w-20 bg-gradient-to-r from-indigo-500 to-rose-500" />
 
-            <p className="text-white/70 leading-relaxed">
-              Customize your experience with these optional services available to all plan levels.
+            <p className="leading-relaxed text-white/70">
+              Customize your experience with these optional services available to
+              all plan levels.
             </p>
           </motion.div>
 
@@ -394,23 +438,51 @@ export default function PricingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
+            className="mx-auto max-w-4xl"
           >
-            <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="px-6 py-4 text-left text-white/90">Service</th>
-                    <th className="px-6 py-4 text-left text-white/90">Description</th>
-                    <th className="px-6 py-4 text-right text-white/90">Price</th>
+                    <th
+                      className="px-6 py-4 text-left text-white/90"
+                      scope="col"
+                    >
+                      Service
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-white/90"
+                      scope="col"
+                    >
+                      Description
+                    </th>
+                    <th
+                      className="px-6 py-4 text-right text-white/90"
+                      scope="col"
+                    >
+                      Price
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {additionalServices.map((service, index) => (
-                    <tr key={index} className={index < additionalServices.length - 1 ? "border-b border-white/10" : ""}>
-                      <td className="px-6 py-4 text-white/80">{service.service}</td>
-                      <td className="px-6 py-4 text-white/60">{service.description}</td>
-                      <td className="px-6 py-4 text-right text-white/80">{service.price}</td>
+                    <tr
+                      key={service.service}
+                      className={
+                        index < additionalServices.length - 1
+                          ? "border-b border-white/10"
+                          : ""
+                      }
+                    >
+                      <td className="px-6 py-4 text-white/80">
+                        {service.service}
+                      </td>
+                      <td className="px-6 py-4 text-white/60">
+                        {service.description}
+                      </td>
+                      <td className="px-6 py-4 text-right text-white/80">
+                        {service.price}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -428,17 +500,17 @@ export default function PricingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto mb-12"
+            className="mx-auto mb-12 max-w-3xl text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="mb-6 text-3xl font-bold md:text-4xl">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
                 Frequently Asked Questions
               </span>
             </h2>
 
-            <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-rose-500 mx-auto mb-8" />
+            <div className="mx-auto mb-8 h-1 w-20 bg-gradient-to-r from-indigo-500 to-rose-500" />
 
-            <p className="text-white/70 leading-relaxed">
+            <p className="leading-relaxed text-white/70">
               Find answers to common questions about our pricing and plans.
             </p>
           </motion.div>
@@ -449,16 +521,16 @@ export default function PricingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="max-w-3xl mx-auto"
+            className="mx-auto max-w-3xl"
           >
             <FAQAccordion items={faqs} />
           </motion.div>
         </div>
       </section>
 
-      <section className="py-16 md:py-24 bg-white/[0.01]">
+      <section className="bg-white/[0.01] py-16 md:py-24">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="max-w-4xl mx-auto bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 md:p-12 backdrop-blur-[2px] relative overflow-hidden">
+          <div className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 md:p-12 backdrop-blur-[2px]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_70%)]" />
 
             <div className="relative z-10">
@@ -468,15 +540,16 @@ export default function PricingPage() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                className="text-center mb-8"
+                className="mb-8 text-center"
               >
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <h2 className="mb-4 text-3xl font-bold md:text-4xl">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
                     Need a Custom Solution?
                   </span>
                 </h2>
-                <p className="text-white/70 max-w-2xl mx-auto">
-                  Contact our team for personalized pricing and solutions tailored to your specific needs.
+                <p className="mx-auto max-w-2xl text-white/70">
+                  Contact our team for personalized pricing and solutions tailored
+                  to your specific needs.
                 </p>
               </motion.div>
 
@@ -486,15 +559,22 @@ export default function PricingPage() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+                className="flex flex-col justify-center gap-4 sm:flex-row"
               >
                 <Link href="/contact">
-                  <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white font-medium px-6 py-3">
-                    Contact Sales <ArrowRight className="ml-2 w-4 h-4" />
+                  <Button
+                    className="bg-gradient-to-r from-indigo-500 to-rose-500 px-6 py-3 font-medium text-white hover:from-indigo-600 hover:to-rose-600"
+                    aria-label="Contact sales team"
+                  >
+                    Contact Sales <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button variant="outline" className="border-white/10 hover:bg-white/[0.03] text-white/80">
+                  <Button
+                    variant="outline"
+                    className="border-white/10 text-white/80 hover:bg-white/[0.03]"
+                    aria-label="Create a new account"
+                  >
                     Create Account
                   </Button>
                 </Link>
@@ -504,6 +584,5 @@ export default function PricingPage() {
         </div>
       </section>
     </main>
-  )
+  );
 }
-

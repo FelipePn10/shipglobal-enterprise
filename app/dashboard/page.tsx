@@ -1,24 +1,96 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import OverviewCard from "@/components/dashboard/overview-card"
-import ImportStatusCard from "@/components/dashboard/import-status-card"
-import CommunicationLog from "@/components/dashboard/communication-log"
-import FinancialSummary from "@/components/dashboard/financial-summary"
-import DocumentList from "@/components/dashboard/document-list"
-import AnalyticsChart from "@/components/dashboard/analytics-chart"
-import { Package, MessageSquare, DollarSign, FileText, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Link from "next/link"
+import { JSX, useState } from "react";
+import { useRouter } from "next/navigation";
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import OverviewCard from "@/components/dashboard/overview-card";
+import ImportStatusCard from "@/components/dashboard/import-status-card";
+import CommunicationLog from "@/components/dashboard/communication-log";
+import FinancialSummary from "@/components/dashboard/financial-summary";
+import DocumentList from "@/components/dashboard/document-list";
+import AnalyticsChart from "@/components/dashboard/analytics-chart";
+import { Package, MessageSquare, DollarSign, FileText, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
+
+// Types
+interface OverviewItem {
+  title: string;
+  value: number | string;
+  trend: number;
+  trendLabel: string;
+  icon: JSX.Element;
+}
+
+interface ImportStatus {
+  importId: string;
+  title: string;
+  status: "shipping" | "customs" | "issue" | "processing";
+  origin: string;
+  destination: string;
+  eta: string;
+  lastUpdated: string;
+  progress: number;
+}
+
+interface Sender {
+  name: string;
+  role: string;
+}
+
+interface Attachment {
+  name: string;
+  type: string;
+  size: string;
+  url: string;
+}
+
+interface CommunicationMessage {
+  id: string;
+  sender: Sender;
+  content: string;
+  timestamp: string;
+  attachments?: Attachment[];
+}
+
+interface FinancialItem {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  status: "paid" | "pending";
+  type: "fee" | "invoice" | "payment";
+}
+
+interface FinancialData {
+  items: FinancialItem[];
+  totalPaid: number;
+  totalPending: number;
+}
+
+interface Document {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  uploadedBy: string;
+  uploadDate: string;
+  status: "approved" | "pending";
+  category: string;
+}
+
+interface AnalyticsDataPoint {
+  name: string;
+  imports: number;
+  revenue: number;
+}
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("overview")
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const overviewData = [
+  const overviewData: OverviewItem[] = [
     {
       title: "Active Imports",
       value: 12,
@@ -47,13 +119,13 @@ export default function DashboardPage() {
       trendLabel: "vs last month",
       icon: <DollarSign className="h-5 w-5 text-white/80" />,
     },
-  ]
+  ];
 
-  const importStatusData = [
+  const importStatusData: ImportStatus[] = [
     {
       importId: "IMP-2023-0042",
       title: "Electronics Shipment",
-      status: "shipping" as const,
+      status: "shipping",
       origin: "Shenzhen, China",
       destination: "Los Angeles, USA",
       eta: "Oct 15, 2023",
@@ -63,7 +135,7 @@ export default function DashboardPage() {
     {
       importId: "IMP-2023-0041",
       title: "Furniture Import",
-      status: "customs" as const,
+      status: "customs",
       origin: "Milan, Italy",
       destination: "New York, USA",
       eta: "Oct 12, 2023",
@@ -73,7 +145,7 @@ export default function DashboardPage() {
     {
       importId: "IMP-2023-0040",
       title: "Textile Materials",
-      status: "issue" as const,
+      status: "issue",
       origin: "Mumbai, India",
       destination: "London, UK",
       eta: "Delayed",
@@ -83,16 +155,16 @@ export default function DashboardPage() {
     {
       importId: "IMP-2023-0039",
       title: "Automotive Parts",
-      status: "processing" as const,
+      status: "processing",
       origin: "Stuttgart, Germany",
       destination: "Detroit, USA",
       eta: "Oct 18, 2023",
       lastUpdated: "3 hours ago",
       progress: 25,
     },
-  ]
+  ];
 
-  const communicationData = [
+  const communicationData: CommunicationMessage[] = [
     {
       id: "msg-001",
       sender: {
@@ -149,56 +221,56 @@ export default function DashboardPage() {
         },
       ],
     },
-  ]
+  ];
 
-  const financialData = {
+  const financialData: FinancialData = {
     items: [
       {
         id: "fin-001",
         description: "Customs Clearance Fee",
         amount: 1250,
         date: "Oct 5, 2023",
-        status: "paid" as const,
-        type: "fee" as const,
+        status: "paid",
+        type: "fee",
       },
       {
         id: "fin-002",
         description: "Electronics Shipment Invoice",
         amount: 12500,
         date: "Oct 3, 2023",
-        status: "pending" as const,
-        type: "invoice" as const,
+        status: "pending",
+        type: "invoice",
       },
       {
         id: "fin-003",
         description: "Furniture Import Payment",
         amount: 8750,
         date: "Sep 28, 2023",
-        status: "paid" as const,
-        type: "payment" as const,
+        status: "paid",
+        type: "payment",
       },
       {
         id: "fin-004",
         description: "Textile Materials Refund",
         amount: 3200,
         date: "Sep 25, 2023",
-        status: "pending" as const,
-        type: "payment" as const,
+        status: "pending",
+        type: "payment",
       },
       {
         id: "fin-005",
         description: "Shipping Insurance",
         amount: 950,
         date: "Sep 20, 2023",
-        status: "paid" as const,
-        type: "fee" as const,
+        status: "paid",
+        type: "fee",
       },
     ],
     totalPaid: 10950,
     totalPending: 15700,
-  }
+  };
 
-  const documentsData = [
+  const documentsData: Document[] = [
     {
       id: "doc-001",
       name: "Electronics_Invoice.pdf",
@@ -206,8 +278,8 @@ export default function DashboardPage() {
       size: "1.2 MB",
       uploadedBy: "John Smith",
       uploadDate: "Oct 5, 2023",
-      status: "approved" as const,
-      category: "invoice"
+      status: "approved",
+      category: "invoice",
     },
     {
       id: "doc-002",
@@ -216,8 +288,8 @@ export default function DashboardPage() {
       size: "0.8 MB",
       uploadedBy: "Emma Davis",
       uploadDate: "Oct 2, 2023",
-      status: "pending" as const,
-      category: "shipping"
+      status: "pending",
+      category: "shipping",
     },
     {
       id: "doc-003",
@@ -226,8 +298,8 @@ export default function DashboardPage() {
       size: "1.5 MB",
       uploadedBy: "Michael Chen",
       uploadDate: "Sep 30, 2023",
-      status: "pending" as const,
-      category: "certificate"
+      status: "pending",
+      category: "certificate",
     },
     {
       id: "doc-004",
@@ -236,8 +308,8 @@ export default function DashboardPage() {
       size: "2.3 MB",
       uploadedBy: "Sarah Johnson",
       uploadDate: "Sep 28, 2023",
-      status: "approved" as const,
-      category: "invoice"
+      status: "approved",
+      category: "invoice",
     },
     {
       id: "doc-005",
@@ -246,12 +318,12 @@ export default function DashboardPage() {
       size: "1.7 MB",
       uploadedBy: "Robert Smith",
       uploadDate: "Sep 25, 2023",
-      status: "approved" as const,
-      category: "permit"
+      status: "approved",
+      category: "permit",
     },
-  ]
+  ];
 
-  const analyticsData = [
+  const analyticsData: AnalyticsDataPoint[] = [
     { name: "Jan", imports: 12, revenue: 18000 },
     { name: "Feb", imports: 15, revenue: 22500 },
     { name: "Mar", imports: 18, revenue: 27000 },
@@ -264,74 +336,88 @@ export default function DashboardPage() {
     { name: "Oct", imports: 30, revenue: 45000 },
     { name: "Nov", imports: 0, revenue: 0 },
     { name: "Dec", imports: 0, revenue: 0 },
-  ]
+  ];
 
   const handleImportClick = (importId: string) => {
-    router.push(`/dashboard/imports/${importId}`)
-  }
+    router.push(`/dashboard/imports/${importId}`);
+  };
 
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-            <p className="text-white/60">Welcome back, John. Heres an overview of your import operations.</p>
+            <p className="text-white/60">
+              Welcome back, John. Heres an overview of your import operations.
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-white/10 text-white/80 hover:bg-white/5">
-              <Calendar className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              className="border-white/10 text-white/80 hover:bg-white/5"
+              aria-label="Current date"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
               Oct 10, 2023
             </Button>
             <Link href="/dashboard/imports">
-            <Button className="bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 text-white">
-              <Package className="h-4 w-4 mr-2" />
-              New Import
-            </Button>
+              <Button
+                className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
+                aria-label="Start new import"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                New Import
+              </Button>
             </Link>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-white/5 border-white/10">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+            className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            aria-label="Overview tab"
           >
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="imports"
-            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+            className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            aria-label="Imports tab"
           >
             Imports
           </TabsTrigger>
           <TabsTrigger
             value="finances"
-            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+            className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            aria-label="Finances tab"
           >
             Finances
           </TabsTrigger>
           <TabsTrigger
             value="documents"
-            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+            className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            aria-label="Documents tab"
           >
             Documents
           </TabsTrigger>
           <TabsTrigger
             value="messages"
-            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+            className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            aria-label="Messages tab"
           >
             Messages
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {overviewData.map((item, index) => (
+        <TabsContent value="overview" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {overviewData.map((item) => (
               <OverviewCard
-                key={index}
+                key={item.title}
                 title={item.title}
                 value={item.value}
                 trend={item.trend}
@@ -341,21 +427,23 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
               <div>
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-lg font-medium text-white">Recent Imports</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/60 hover:text-white"
-                    onClick={() => setActiveTab("imports")}
-                  >
-                    View All
-                  </Button>
+                  <Link href="/dashboard/imports">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white/60 hover:text-white"
+                      aria-label="View all imports"
+                    >
+                      View All
+                    </Button>
+                  </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {importStatusData.slice(0, 4).map((item) => (
                     <ImportStatusCard
                       key={item.importId}
@@ -377,7 +465,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-6">
-              <CommunicationLog title="Recent Messages" messages={communicationData.slice(0, 3)} />
+              <CommunicationLog
+                title="Recent Messages"
+                messages={communicationData.slice(0, 3)}
+              />
 
               <FinancialSummary
                 items={financialData.items.slice(0, 3)}
@@ -390,8 +481,8 @@ export default function DashboardPage() {
           <DocumentList documents={documentsData.slice(0, 3)} />
         </TabsContent>
 
-        <TabsContent value="imports" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="imports" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {importStatusData.map((item) => (
               <ImportStatusCard
                 key={item.importId}
@@ -409,8 +500,8 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="finances" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="finances" className="mt-6 space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <FinancialSummary
               items={financialData.items}
               totalPaid={financialData.totalPaid}
@@ -431,5 +522,5 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
     </DashboardLayout>
-  )
+  );
 }

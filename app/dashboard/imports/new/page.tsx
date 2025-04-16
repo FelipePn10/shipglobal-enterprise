@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -29,15 +29,23 @@ import { Progress } from "@/components/ui/progress";
 import { PersonalInfoForm } from "@/components/imports/personal-info-form";
 import { ProductInfoForm } from "@/components/imports/product-info-form";
 import { TermsCheckbox } from "@/components/imports/terms-checkbox";
-
 import { PaymentMethodSelector } from "@/components/imports/payment-method-selector";
 import { popularCountries, productCategories } from "@/data/data";
 import { type ImportFormValues, importFormSchema } from "@/types/types";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { ShippingAddressForm } from "@/components/imports/shipping-addres-form";
 
+// Types
+type Step = "details" | "address" | "product" | "payment" | "review" | "confirmation";
+
+interface StepConfig {
+  key: Step;
+  label: string;
+  icon: JSX.Element;
+}
+
 export default function NewImportPage() {
-  const [step, setStep] = useState<"details" | "address" | "product" | "payment" | "review" | "confirmation">("details");
+  const [step, setStep] = useState<Step>("details");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(20);
   const { data: session, status } = useSession();
@@ -90,12 +98,24 @@ export default function NewImportPage() {
       form.setValue("externalPaymentMethod", "credit");
     }
     switch (step) {
-      case "details": setProgressPercentage(20); break;
-      case "address": setProgressPercentage(40); break;
-      case "product": setProgressPercentage(60); break;
-      case "payment": setProgressPercentage(80); break;
-      case "review": setProgressPercentage(90); break;
-      case "confirmation": setProgressPercentage(100); break;
+      case "details":
+        setProgressPercentage(20);
+        break;
+      case "address":
+        setProgressPercentage(40);
+        break;
+      case "product":
+        setProgressPercentage(60);
+        break;
+      case "payment":
+        setProgressPercentage(80);
+        break;
+      case "review":
+        setProgressPercentage(90);
+        break;
+      case "confirmation":
+        setProgressPercentage(100);
+        break;
     }
   }, [paymentMethod, externalPaymentMethod, step, form]);
 
@@ -109,41 +129,60 @@ export default function NewImportPage() {
       });
       return;
     }
-    const steps = ["details", "address", "product", "payment", "review", "confirmation"];
+    const steps: Step[] = ["details", "address", "product", "payment", "review", "confirmation"];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
-      setStep(steps[currentIndex + 1] as any);
+      setStep(steps[currentIndex + 1]);
     }
   };
 
   const handlePreviousStep = () => {
-    const steps = ["details", "address", "product", "payment", "review", "confirmation"];
+    const steps: Step[] = ["details", "address", "product", "payment", "review", "confirmation"];
     const currentIndex = steps.indexOf(step);
     if (currentIndex > 0) {
-      setStep(steps[currentIndex - 1] as any);
+      setStep(steps[currentIndex - 1]);
     }
   };
 
   const validateCurrentStep = async () => {
-    let fieldsToValidate: string[] = [];
+    let fieldsToValidate: (keyof ImportFormValues | `address.${keyof ImportFormValues['address']}` | `creditCard.${keyof NonNullable<ImportFormValues['creditCard']>}`)[] = [];
     switch (step) {
-      case "details": fieldsToValidate = ["fullName", "cpf"]; break;
-      case "address": fieldsToValidate = ["address.street", "address.number", "address.city", "address.state", "address.zipCode"]; break;
-      case "product": fieldsToValidate = ["productCategory", "originCountry", "productValue"]; break;
+      case "details":
+        fieldsToValidate = ["fullName", "cpf"];
+        break;
+      case "address":
+        fieldsToValidate = [
+          "address.street",
+          "address.number",
+          "address.city",
+          "address.state",
+          "address.zipCode",
+        ];
+        break;
+      case "product":
+        fieldsToValidate = ["productCategory", "originCountry", "productValue"];
+        break;
       case "payment":
         fieldsToValidate = ["paymentMethod"];
         if (paymentMethod === "external") {
           fieldsToValidate.push("externalPaymentMethod");
           if (["credit", "debit"].includes(externalPaymentMethod || "")) {
-            fieldsToValidate.push("creditCard.number", "creditCard.expiry", "creditCard.cvc", "creditCard.name");
+            fieldsToValidate.push(
+              "creditCard.number",
+              "creditCard.expiry",
+              "creditCard.cvc",
+              "creditCard.name"
+            );
           } else if (externalPaymentMethod === "paypal") {
             fieldsToValidate.push("paypalEmail");
           }
         }
         break;
-      case "review": fieldsToValidate = ["acceptTerms"]; break;
+      case "review":
+        fieldsToValidate = ["acceptTerms"];
+        break;
     }
-    return await form.trigger(fieldsToValidate as any);
+    return await form.trigger(fieldsToValidate);
   };
 
   const onSubmit = async (data: ImportFormValues) => {
@@ -154,8 +193,15 @@ export default function NewImportPage() {
 
     if (step === "review") {
       if (!data.acceptTerms) {
-        form.setError("acceptTerms", { type: "required", message: "You must accept the terms to proceed" });
-        toast({ title: "Error", description: "You must accept the terms to proceed", variant: "destructive" });
+        form.setError("acceptTerms", {
+          type: "required",
+          message: "You must accept the terms to proceed",
+        });
+        toast({
+          title: "Error",
+          description: "You must accept the terms to proceed",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -163,9 +209,9 @@ export default function NewImportPage() {
       try {
         const headers: Record<string, string> = { "Content-Type": "application/json" };
         if (session?.user.type === "company" && session?.user.companyId) {
-          headers["company-id"] = session.user.companyId;
+          headers["company-id"] = session.user.companyId.toString();
         } else if (session?.user.id) {
-          headers["user-id"] = session.user.id;
+          headers["user-id"] = session.user.id.toString();
         }
 
         const importData = {
@@ -175,7 +221,8 @@ export default function NewImportPage() {
           status: "processing",
           progress: 0,
           productValue: Number(data.productValue),
-          paymentMethod: data.paymentMethod === "external" ? data.externalPaymentMethod : data.paymentMethod,
+          paymentMethod:
+            data.paymentMethod === "external" ? data.externalPaymentMethod : data.paymentMethod,
         };
 
         const response = await fetch("/api/imports", {
@@ -191,7 +238,11 @@ export default function NewImportPage() {
 
         await response.json();
         setStep("confirmation");
-        toast({ title: "Success", description: "Your import was created successfully!", variant: "default" });
+        toast({
+          title: "Success",
+          description: "Your import was created successfully!",
+          variant: "default",
+        });
       } catch (error) {
         toast({
           title: "Error creating import",
@@ -208,22 +259,47 @@ export default function NewImportPage() {
 
   const formatCurrency = (value: string) => {
     const numValue = Number.parseFloat(value);
-    return isNaN(numValue) ? "R$ 0,00" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numValue);
+    return isNaN(numValue)
+      ? "R$ 0,00"
+      : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+          numValue
+        );
   };
 
-  const formatCPF = (value: string) => value.replace(/\D/g, "").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2").substring(0, 14);
-  const formatZipCode = (value: string) => value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
-  const getCountryFlag = (code: string) => `https://flagcdn.com/w20/${code.toLowerCase()}.png`;
-  const getCountryName = (code: string) => popularCountries.find((c) => c.value === code)?.label || code;
-  const getCategoryName = (code: string) => productCategories.find((c) => c.value === code)?.label || code;
+  const formatCPF = (value: string) =>
+    value
+      .replace(/\D/g, "")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .substring(0, 14);
+
+  const formatZipCode = (value: string) =>
+    value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
+
+  const getCountryFlag = (code: string) =>
+    `https://flagcdn.com/w20/${code.toLowerCase()}.png`;
+
+  const getCountryName = (code: string) =>
+    popularCountries.find((c) => c.value === code)?.label || code;
+
+  const getCategoryName = (code: string) =>
+    productCategories.find((c) => c.value === code)?.label || code;
+
   const calculateFees = (amount: string, method: string) => {
     const value = Number.parseFloat(amount || "0");
-    return { credit: value * 0.02, debit: value * 0.01, paypal: value * 0.025, pix: 0, balance: 0 }[method] || 0;
+    return (
+      { credit: value * 0.02, debit: value * 0.01, paypal: value * 0.025, pix: 0, balance: 0 }[
+        method
+      ] || 0
+    );
   };
-  const calculateTotal = (amount: string, method: string) => Number.parseFloat(amount || "0") + calculateFees(amount, method);
+
+  const calculateTotal = (amount: string, method: string) =>
+    Number.parseFloat(amount || "0") + calculateFees(amount, method);
 
   const renderStepIndicator = () => {
-    const steps = [
+    const steps: StepConfig[] = [
       { key: "details", label: "Personal Info", icon: <User className="h-5 w-5" /> },
       { key: "address", label: "Shipping", icon: <MapPin className="h-5 w-5" /> },
       { key: "product", label: "Product", icon: <Package2 className="h-5 w-5" /> },
@@ -237,8 +313,23 @@ export default function NewImportPage() {
             const isActive = step === s.key;
             const isPast = steps.findIndex((x) => x.key === step) > index;
             return (
-              <div key={s.key} className={cn("flex flex-col items-center space-y-2", isActive ? "text-white" : isPast ? "text-purple-400" : "text-gray-500")}>
-                <div className={cn("h-8 w-8 rounded-full flex items-center justify-center", isActive ? "bg-gradient-to-r from-purple-600 to-pink-500" : isPast ? "bg-purple-600" : "bg-zinc-800")}>
+              <div
+                key={s.key}
+                className={cn(
+                  "flex flex-col items-center space-y-2",
+                  isActive ? "text-white" : isPast ? "text-purple-400" : "text-gray-500"
+                )}
+              >
+                <div
+                  className={cn(
+                    "h-8 w-8 rounded-full flex items-center justify-center",
+                    isActive
+                      ? "bg-gradient-to-r from-purple-600 to-pink-500"
+                      : isPast
+                      ? "bg-purple-600"
+                      : "bg-zinc-800"
+                  )}
+                >
                   {isPast ? <Check className="h-4 w-4 text-white" /> : s.icon}
                 </div>
                 <span className="text-xs hidden md:block">{s.label}</span>
@@ -246,23 +337,38 @@ export default function NewImportPage() {
             );
           })}
         </div>
-        <Progress value={progressPercentage} className="mt-4 h-1 bg-zinc-800" indicatorClassName="bg-gradient-to-r from-purple-600 to-pink-500" />
+        <Progress
+          value={progressPercentage}
+          className="mt-4 h-1 bg-zinc-800"
+          indicatorClassName="bg-gradient-to-r from-purple-600 to-pink-500"
+        />
       </div>
     );
   };
 
   if (status === "loading") {
-    return <DashboardLayout><div className="p-6 text-white">Loading...</div></DashboardLayout>;
+    return (
+      <DashboardLayout>
+        <div className="p-6 text-white">Loading...</div>
+      </DashboardLayout>
+    );
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => router.push("/dashboard/imports")} className="text-white/80 hover:bg-white/5">
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/dashboard/imports")}
+            className="text-white/80 hover:bg-white/5"
+            aria-label="Back to imports"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Imports
           </Button>
-          <h1 className="text-2xl font-bold text-white">{step === "confirmation" ? "Import Complete" : "Create New Import"}</h1>
+          <h1 className="text-2xl font-bold text-white">
+            {step === "confirmation" ? "Import Complete" : "Create New Import"}
+          </h1>
           <div />
         </div>
         <Form {...form}>
@@ -272,7 +378,9 @@ export default function NewImportPage() {
               {step === "details" && (
                 <Card className="border-white/10 bg-white/5">
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold text-white mb-2">Personal Information</h2>
+                    <h2 className="text-xl font-semibold text-white mb-2">
+                      Personal Information
+                    </h2>
                     <PersonalInfoForm control={form.control} formatCPF={formatCPF} />
                   </CardContent>
                 </Card>
@@ -281,23 +389,40 @@ export default function NewImportPage() {
                 <Card className="border-white/10 bg-white/5">
                   <CardContent className="p-6">
                     <h2 className="text-xl font-semibold text-white mb-2">Shipping Address</h2>
-                    <ShippingAddressForm control={form.control} formatZipCode={formatZipCode} />
+                    <ShippingAddressForm
+                      control={form.control}
+                      formatZipCode={formatZipCode}
+                    />
                   </CardContent>
                 </Card>
               )}
               {step === "product" && (
                 <Card className="border-white/10 bg-white/5">
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold text-white mb-2">Product Information</h2>
-                    <ProductInfoForm control={form.control} getCountryFlag={getCountryFlag} />
+                    <h2 className="text-xl font-semibold text-white mb-2">
+                      Product Information
+                    </h2>
+                    <ProductInfoForm
+                      control={form.control}
+                      getCountryFlag={getCountryFlag}
+                    />
                   </CardContent>
                 </Card>
               )}
               {step === "payment" && (
                 <Card className="border-white/10 bg-white/5">
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold text-white mb-2">Payment Method</h2>
-                    <PaymentMethodSelector control={form.control} watch={form.watch} setValue={form.setValue} formatCurrency={formatCurrency} calculateFees={calculateFees} calculateTotal={calculateTotal} />
+                    <h2 className="text-xl font-semibold text-white mb-2">
+                      Payment Method
+                    </h2>
+                    <PaymentMethodSelector
+                      control={form.control}
+                      watch={form.watch}
+                      setValue={form.setValue}
+                      formatCurrency={formatCurrency}
+                      calculateFees={calculateFees}
+                      calculateTotal={calculateTotal}
+                    />
                   </CardContent>
                 </Card>
               )}
@@ -305,39 +430,93 @@ export default function NewImportPage() {
                 <div className="space-y-6">
                   <Card className="border-white/10 bg-white/5">
                     <CardContent className="p-6">
-                      <h2 className="text-xl font-semibold text-white mb-4">Review Your Import</h2>
+                      <h2 className="text-xl font-semibold text-white mb-4">
+                        Review Your Import
+                      </h2>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <h3 className="text-lg font-medium text-white mb-2 flex items-center"><User className="h-4 w-4 mr-2" /> Personal Info</h3>
+                          <h3 className="text-lg font-medium text-white mb-2 flex items-center">
+                            <User className="h-4 w-4 mr-2" /> Personal Info
+                          </h3>
                           <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-white/60">Name:</dt><dd>{form.getValues("fullName")}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">CPF:</dt><dd>{form.getValues("cpf")}</dd></div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Name:</dt>
+                              <dd>{form.getValues("fullName")}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">CPF:</dt>
+                              <dd>{form.getValues("cpf")}</dd>
+                            </div>
                           </dl>
                         </div>
                         <div>
-                          <h3 className="text-lg font-medium text-white mb-2 flex items-center"><MapPin className="h-4 w-4 mr-2" /> Shipping Address</h3>
+                          <h3 className="text-lg font-medium text-white mb-2 flex items-center">
+                            <MapPin className="h-4 w-4 mr-2" /> Shipping Address
+                          </h3>
                           <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-white/60">Street:</dt><dd>{form.getValues("address.street")}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">City:</dt><dd>{form.getValues("address.city")}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">State:</dt><dd>{form.getValues("address.state")}</dd></div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Street:</dt>
+                              <dd>{form.getValues("address.street")}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">City:</dt>
+                              <dd>{form.getValues("address.city")}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">State:</dt>
+                              <dd>{form.getValues("address.state")}</dd>
+                            </div>
                           </dl>
                         </div>
                       </div>
                       <Separator className="my-4 bg-white/10" />
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <h3 className="text-lg font-medium text-white mb-2 flex items-center"><Package2 className="h-4 w-4 mr-2" /> Product Details</h3>
+                          <h3 className="text-lg font-medium text-white mb-2 flex items-center">
+                            <Package2 className="h-4 w-4 mr-2" /> Product Details
+                          </h3>
                           <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-white/60">Category:</dt><dd>{getCategoryName(form.getValues("productCategory"))}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">Origin:</dt><dd>{getCountryName(form.getValues("originCountry"))}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">Value:</dt><dd>{formatCurrency(form.getValues("productValue"))}</dd></div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Category:</dt>
+                              <dd>{getCategoryName(form.getValues("productCategory"))}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Origin:</dt>
+                              <dd>{getCountryName(form.getValues("originCountry"))}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Value:</dt>
+                              <dd>{formatCurrency(form.getValues("productValue"))}</dd>
+                            </div>
                           </dl>
                         </div>
                         <div>
-                          <h3 className="text-lg font-medium text-white mb-2 flex items-center"><CreditCard className="h-4 w-4 mr-2" /> Payment Info</h3>
+                          <h3 className="text-lg font-medium text-white mb-2 flex items-center">
+                            <CreditCard className="h-4 w-4 mr-2" /> Payment Info
+                          </h3>
                           <dl className="space-y-2 text-sm">
-                            <div className="flex justify-between"><dt className="text-white/60">Method:</dt><dd>{paymentMethod === "balance" ? "Balance" : externalPaymentMethod}</dd></div>
-                            <div className="flex justify-between"><dt className="text-white/60">Total:</dt><dd>{formatCurrency((calculateTotal(form.getValues("productValue"), externalPaymentMethod || "balance") * 1.05).toString())}</dd></div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Method:</dt>
+                              <dd>
+                                {paymentMethod === "balance"
+                                  ? "Balance"
+                                  : externalPaymentMethod?.charAt(0).toUpperCase() +
+                                    (externalPaymentMethod || "").slice(1)}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-white/60">Total:</dt>
+                              <dd>
+                                {formatCurrency(
+                                  (
+                                    calculateTotal(
+                                      form.getValues("productValue"),
+                                      externalPaymentMethod || "balance"
+                                    ) * 1.05
+                                  ).toString()
+                                )}
+                              </dd>
+                            </div>
                           </dl>
                         </div>
                       </div>
@@ -353,23 +532,46 @@ export default function NewImportPage() {
               {step === "confirmation" && (
                 <div className="text-center py-12">
                   <CheckCircle2 className="h-16 w-16 text-green-400 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-white mb-4">Import Successfully Created!</h2>
-                  <p className="text-white/60 mb-6">Your import is being processed. Track it in your dashboard.</p>
-                  <Button onClick={() => router.push("/dashboard/imports")} className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white">View My Imports</Button>
+                  <h2 className="text-2xl font-bold text-white mb-4">
+                    Import Successfully Created!
+                  </h2>
+                  <p className="text-white/60 mb-6">
+                    Your import is being processed. Track it in your dashboard.
+                  </p>
+                  <Button
+                    onClick={() => router.push("/dashboard/imports")}
+                    className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white"
+                    aria-label="View imports"
+                  >
+                    View My Imports
+                  </Button>
                 </div>
               )}
             </ScrollArea>
             {step !== "confirmation" && (
               <div className="flex justify-between p-6 border-t border-white/10">
-                {step !== "details" && <Button variant="outline" onClick={handlePreviousStep} className="border-white/10 text-white/80 hover:bg-white/5">Back</Button>}
+                {step !== "details" && (
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviousStep}
+                    className="border-white/10 text-white/80 hover:bg-white/5"
+                    aria-label="Go back to previous step"
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
                   type={step === "review" ? "submit" : "button"}
                   onClick={step !== "review" ? handleNextStep : undefined}
                   disabled={isSubmitting}
                   className="ml-auto bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
+                  aria-label={
+                    step === "review" ? "Complete import" : "Continue to next step"
+                  }
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {step === "review" ? "Complete Import" : "Continue"} {step !== "review" && <ChevronRight className="ml-2 h-4 w-4" />}
+                  {step === "review" ? "Complete Import" : "Continue"}{" "}
+                  {step !== "review" && <ChevronRight className="ml-2 h-4 w-4" />}
                 </Button>
               </div>
             )}

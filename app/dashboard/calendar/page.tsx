@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react";
 import {
   format,
   addDays,
@@ -11,10 +11,10 @@ import {
   parseISO,
   isSameDay,
   isValid,
-} from "date-fns"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+} from "date-fns";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -22,19 +22,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import { DayView } from "@/components/calendar/day-view"
-import { EventForm } from "@/components/calendar/event-form"
-import { EventList } from "@/components/calendar/event-list"
-import { EventSearch } from "@/components/calendar/event-search"
-import { EventStatistics } from "@/components/calendar/event-statistics"
-import { MonthView } from "@/components/calendar/moth-view"
-import { WeekView } from "@/components/calendar/week-view"
+} from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { DayView } from "@/components/calendar/day-view";
+import { EventForm } from "@/components/calendar/event-form";
+import { EventList } from "@/components/calendar/event-list";
+import { EventSearch } from "@/components/calendar/event-search";
+import { EventStatistics } from "@/components/calendar/event-statistics";
+import { MonthView } from "@/components/calendar/moth-view";
+import { WeekView } from "@/components/calendar/week-view";
 
+// Types
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+  status: "confirmed" | "tentative" | "cancelled";
+  location: string;
+  attendees: string[];
+  color: string;
+}
+
+interface EventType {
+  value: string;
+  label: string;
+  color: string;
+}
 
 // Sample event data
-const initialEvents = [
+const initialEvents: Event[] = [
   {
     id: 1,
     title: "Team Meeting",
@@ -139,10 +159,10 @@ const initialEvents = [
     attendees: ["All Departments", "Press"],
     color: "#ec4899",
   },
-]
+];
 
 // Event type definitions with colors
-const eventTypes = [
+const eventTypes: EventType[] = [
   { value: "meeting", label: "Meeting", color: "#4f46e5" },
   { value: "presentation", label: "Presentation", color: "#0ea5e9" },
   { value: "deadline", label: "Deadline", color: "#ef4444" },
@@ -150,214 +170,248 @@ const eventTypes = [
   { value: "social", label: "Social", color: "#10b981" },
   { value: "planning", label: "Planning", color: "#8b5cf6" },
   { value: "event", label: "Event", color: "#ec4899" },
-]
+];
 
 export default function CalendarPage() {
-  const [events, setEvents] = useState(initialEvents)
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [selectedView, setSelectedView] = useState("month")
-  const [filteredEvents, setFilteredEvents] = useState<typeof initialEvents>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedType, setSelectedType] = useState<string | null>(null)
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false)
-  const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }))
+  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedView, setSelectedView] = useState<"month" | "week" | "day">("month");
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [weekStartDate, setWeekStartDate] = useState<Date>(
+    startOfWeek(new Date(), { weekStartsOn: 0 })
+  );
 
   // Ensure dates are valid
-  const validSelectedDate = isValid(selectedDate) ? selectedDate : new Date()
-  const validWeekStartDate = isValid(weekStartDate) ? weekStartDate : startOfWeek(new Date(), { weekStartsOn: 0 })
+  const validSelectedDate = isValid(selectedDate) ? selectedDate : new Date();
+  const validWeekStartDate = isValid(weekStartDate)
+    ? weekStartDate
+    : startOfWeek(new Date(), { weekStartsOn: 0 });
 
   // Get events for the selected date
-  const eventsForSelectedDate = events.filter((event) => {
-    try {
-      const eventDate = parseISO(event.date)
-      return isValid(eventDate) && isSameDay(eventDate, validSelectedDate)
-    } catch (error) {
-      console.error("Invalid date:", event.date)
-      return false
-    }
-  })
+  const eventsForSelectedDate = useMemo(() => {
+    return events.filter((event) => {
+      const eventDate = parseISO(event.date);
+      return isValid(eventDate) && isSameDay(eventDate, validSelectedDate);
+    });
+  }, [events, validSelectedDate]);
 
   // Get upcoming events (sorted by date)
-  const upcomingEvents = [...events]
-    .filter((event) => {
-      try {
-        const eventDate = parseISO(event.date)
-        const today = new Date()
-        return isValid(eventDate) && eventDate >= today
-      } catch (error) {
-        console.error("Invalid date:", event.date)
-        return false
-      }
-    })
-    .sort((a, b) => {
-      try {
-        const dateA = parseISO(a.date)
-        const dateB = parseISO(b.date)
-        if (isValid(dateA) && isValid(dateB)) {
-          return dateA.getTime() - dateB.getTime()
-        }
-        return 0
-      } catch (error) {
-        console.error("Error sorting dates:", error)
-        return 0
-      }
-    })
-    .slice(0, 5)
+  const upcomingEvents = useMemo(() => {
+    return [...events]
+      .filter((event) => {
+        const eventDate = parseISO(event.date);
+        const today = new Date();
+        return isValid(eventDate) && eventDate >= today;
+      })
+      .sort((a, b) => {
+        const dateA = parseISO(a.date);
+        const dateB = parseISO(b.date);
+        return dateA.getTime() - dateB.getTime();
+      })
+      .slice(0, 5);
+  }, [events]);
 
   // Handle date selection in calendar
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = useCallback((date: Date | undefined) => {
     if (date && isValid(date)) {
-      setSelectedDate(date)
+      setSelectedDate(date);
     }
-  }
+  }, []);
 
   // Handle adding a new event
-  const handleAddEvent = (newEvent: any) => {
-    const eventWithId = {
-      ...newEvent,
-      id: events.length + 1,
-    }
-    setEvents([...events, eventWithId])
-    setIsAddEventOpen(false)
-  }
+  const handleAddEvent = useCallback(
+    (newEvent: Omit<Event, "id">) => {
+      const eventWithId: Event = {
+        ...newEvent,
+        id: events.length + 1,
+      };
+      setEvents((prevEvents) => [...prevEvents, eventWithId]);
+      setIsAddEventOpen(false);
+    },
+    [events]
+  );
 
   // Handle event search
-  const handleSearch = () => {
-    let filtered = [...events]
+  const handleSearch = useCallback(() => {
+    let filtered = [...events];
 
     if (searchQuery) {
       filtered = filtered.filter(
         (event) =>
           event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())),
-      )
+          (event.description &&
+            event.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
     }
 
     if (selectedType) {
-      filtered = filtered.filter((event) => event.type === selectedType)
+      filtered = filtered.filter((event) => event.type === selectedType);
     }
 
-    setFilteredEvents(filtered)
-  }
+    setFilteredEvents(filtered);
+  }, [events, searchQuery, selectedType]);
 
   // Reset search filters
-  const resetFilters = () => {
-    setSearchQuery("")
-    setSelectedType(null)
-    setFilteredEvents([])
-  }
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedType(null);
+    setFilteredEvents([]);
+  }, []);
 
   // Navigate to previous day/week/month
-  const navigatePrevious = () => {
+  const navigatePrevious = useCallback(() => {
     if (selectedView === "day") {
-      setSelectedDate(subDays(validSelectedDate, 1))
+      setSelectedDate(subDays(validSelectedDate, 1));
     } else if (selectedView === "week") {
-      setWeekStartDate(subDays(validWeekStartDate, 7))
+      setWeekStartDate(subDays(validWeekStartDate, 7));
     } else {
-      // Month view - go to previous month
-      const prevMonth = new Date(validSelectedDate)
-      prevMonth.setMonth(prevMonth.getMonth() - 1)
-      setSelectedDate(prevMonth)
+      const prevMonth = new Date(validSelectedDate);
+      prevMonth.setMonth(prevMonth.getMonth() - 1);
+      setSelectedDate(prevMonth);
     }
-  }
+  }, [selectedView, validSelectedDate, validWeekStartDate]);
 
   // Navigate to next day/week/month
-  const navigateNext = () => {
+  const navigateNext = useCallback(() => {
     if (selectedView === "day") {
-      setSelectedDate(addDays(validSelectedDate, 1))
+      setSelectedDate(addDays(validSelectedDate, 1));
     } else if (selectedView === "week") {
-      setWeekStartDate(addDays(validWeekStartDate, 7))
+      setWeekStartDate(addDays(validWeekStartDate, 7));
     } else {
-      // Month view - go to next month
-      const nextMonth = new Date(validSelectedDate)
-      nextMonth.setMonth(nextMonth.getMonth() + 1)
-      setSelectedDate(nextMonth)
+      const nextMonth = new Date(validSelectedDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      setSelectedDate(nextMonth);
     }
-  }
+  }, [selectedView, validSelectedDate, validWeekStartDate]);
 
   // Navigate to today
-  const goToToday = () => {
-    const today = new Date()
-    setSelectedDate(today)
-    setWeekStartDate(startOfWeek(today, { weekStartsOn: 0 }))
-  }
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setSelectedDate(today);
+    setWeekStartDate(startOfWeek(today, { weekStartsOn: 0 }));
+  }, []);
 
   // Format date for display
-  const formatDate = (dateString: string) => {
-    try {
-      const date = parseISO(dateString)
-      if (isValid(date)) {
-        return format(date, "MMM dd, yyyy")
-      }
-      return dateString
-    } catch (error) {
-      console.error("Error formatting date:", dateString)
-      return dateString
-    }
-  }
+  const formatDate = useCallback((dateString: string) => {
+    const date = parseISO(dateString);
+    return isValid(date) ? format(date, "MMM dd, yyyy") : dateString;
+  }, []);
 
   // Get week dates for week view
-  const weekDates = eachDayOfInterval({
-    start: validWeekStartDate,
-    end: endOfWeek(validWeekStartDate, { weekStartsOn: 0 }),
-  })
+  const weekDates = useMemo(() => {
+    return eachDayOfInterval({
+      start: validWeekStartDate,
+      end: endOfWeek(validWeekStartDate, { weekStartsOn: 0 }),
+    });
+  }, [validWeekStartDate]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 text-white/80">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-white">Calendar</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={goToToday}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+            className="border-white/10 text-white/80 hover:bg-white/5"
+            aria-label="Go to today"
+          >
             Today
           </Button>
-          <Button variant="outline" size="icon" onClick={navigatePrevious}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={navigatePrevious}
+            className="border-white/10 text-white/80 hover:bg-white/5"
+            aria-label="Go to previous period"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={navigateNext}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={navigateNext}
+            className="border-white/10 text-white/80 hover:bg-white/5"
+            aria-label="Go to next period"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <span className="font-medium mx-2">
+          <span className="font-medium mx-2 text-white/90">
             {selectedView === "day" && format(validSelectedDate, "MMMM d, yyyy")}
             {selectedView === "week" &&
-              `${format(validWeekStartDate, "MMM d")} - ${format(endOfWeek(validWeekStartDate, { weekStartsOn: 0 }), "MMM d, yyyy")}`}
+              `${format(validWeekStartDate, "MMM d")} - ${format(
+                endOfWeek(validWeekStartDate, { weekStartsOn: 0 }),
+                "MMM d, yyyy"
+              )}`}
             {selectedView === "month" && format(validSelectedDate, "MMMM yyyy")}
           </span>
           <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button
+                className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
+                aria-label="Add new event"
+              >
                 <Plus className="mr-1 h-4 w-4" />
                 Add Event
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px]">
+            <DialogContent className="sm:max-w-[550px] border-white/10 bg-white/5 text-white/80">
               <DialogHeader>
-                <DialogTitle>Create New Event</DialogTitle>
-                <DialogDescription>
-                  Add a new event to your calendar. Fill in the details and click save when you're done.
+                <DialogTitle className="text-white">Create New Event</DialogTitle>
+                <DialogDescription className="text-white/60">
+                  Add a new event to your calendar. Fill in the details and click save when you&apos;re done.
                 </DialogDescription>
               </DialogHeader>
-              <EventForm onSubmit={handleAddEvent} eventTypes={eventTypes} initialDate={validSelectedDate} />
+              <EventForm
+                onSubmit={handleAddEvent}
+                eventTypes={eventTypes}
+                initialDate={validSelectedDate}
+              />
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 border-white/10 bg-white/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Schedule</CardTitle>
-                <CardDescription>View and manage your events</CardDescription>
+                <CardTitle className="text-white">Schedule</CardTitle>
+                <CardDescription className="text-white/60">
+                  View and manage your events
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs value={selectedView} onValueChange={setSelectedView} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="month">Month</TabsTrigger>
-                <TabsTrigger value="week">Week</TabsTrigger>
-                <TabsTrigger value="day">Day</TabsTrigger>
+            <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as "month" | "week" | "day")} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4 border-white/10 bg-white/5">
+                <TabsTrigger
+                  value="month"
+                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  aria-label="Month view"
+                >
+                  Month
+                </TabsTrigger>
+                <TabsTrigger
+                  value="week"
+                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  aria-label="Week view"
+                >
+                  Week
+                </TabsTrigger>
+                <TabsTrigger
+                  value="day"
+                  className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  aria-label="Day view"
+                >
+                  Day
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="month" className="mt-0">
                 <MonthView
@@ -377,27 +431,39 @@ export default function CalendarPage() {
                 />
               </TabsContent>
               <TabsContent value="day" className="mt-0">
-                <DayView selectedDate={validSelectedDate} events={eventsForSelectedDate} eventTypes={eventTypes} />
+                <DayView
+                  selectedDate={validSelectedDate}
+                  events={eventsForSelectedDate}
+                  eventTypes={eventTypes}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="border-white/10 bg-white/5">
             <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
-              <CardDescription>Your next 5 scheduled events</CardDescription>
+              <CardTitle className="text-white">Upcoming Events</CardTitle>
+              <CardDescription className="text-white/60">
+                Your next 5 scheduled events
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <EventList events={upcomingEvents} formatDate={formatDate} eventTypes={eventTypes} />
+              <EventList
+                events={upcomingEvents}
+                formatDate={formatDate}
+                eventTypes={eventTypes}
+              />
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-white/10 bg-white/5">
             <CardHeader>
-              <CardTitle>Event Search</CardTitle>
-              <CardDescription>Find specific events</CardDescription>
+              <CardTitle className="text-white">Event Search</CardTitle>
+              <CardDescription className="text-white/60">
+                Find specific events
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <EventSearch
@@ -414,10 +480,12 @@ export default function CalendarPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-white/10 bg-white/5">
             <CardHeader>
-              <CardTitle>Event Statistics</CardTitle>
-              <CardDescription>Event distribution by type</CardDescription>
+              <CardTitle className="text-white">Event Statistics</CardTitle>
+              <CardDescription className="text-white/60">
+                Event distribution by type
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <EventStatistics events={events} eventTypes={eventTypes} />
@@ -426,6 +494,5 @@ export default function CalendarPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

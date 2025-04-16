@@ -1,11 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, LineChart } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { useState, useCallback } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart3, LineChart } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -19,111 +18,140 @@ import {
   BarChart,
   Bar,
   Legend,
-} from "recharts"
+} from "recharts";
 
 // Types
-type CurrencyCode = "USD" | "EUR" | "CNY" | "JPY"
+type CurrencyCode = "USD" | "EUR" | "CNY" | "JPY";
+
+interface ChartData {
+  date: string;
+  USD: number;
+  EUR: number;
+  CNY: number;
+  JPY: number;
+}
+
+interface CurrencyDetails {
+  symbol: string;
+  name: string;
+  icon: LucideIcon;
+  color: string;
+}
 
 interface BalanceChartProps {
-  data: Array<{
-    date: string
-    USD: number
-    EUR: number
-    CNY: number
-    JPY: number
-  }>
-  currencies: Record<CurrencyCode, { symbol: string; name: string; icon: LucideIcon; color: string }>
+  data: ChartData[];
+  currencies: Record<CurrencyCode, CurrencyDetails>;
+}
+
+interface TooltipPayload {
+  name: CurrencyCode;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
 }
 
 export function BalanceChart({ data, currencies }: BalanceChartProps) {
-  const [chartType, setChartType] = useState("line")
-  const [timeRange, setTimeRange] = useState("30d")
+  const [chartType, setChartType] = useState<"line" | "area" | "bar">("line");
+  const [timeRange, setTimeRange] = useState<"7d" | "14d" | "30d">("30d");
 
   // Filter data based on time range
-  const filteredData = (() => {
+  const filteredData = useCallback(() => {
     switch (timeRange) {
       case "7d":
-        return data.slice(-7)
+        return data.slice(-7);
       case "14d":
-        return data.slice(-14)
+        return data.slice(-14);
       case "30d":
       default:
-        return data
+        return data;
     }
-  })()
+  }, [data, timeRange])();
 
   // Format large numbers
-  const formatYAxis = (value: number): string => {
+  const formatYAxis = useCallback((value: number): string => {
     if (value >= 1_000_000) {
-      return `${(value / 1_000_000).toFixed(1)}M`
+      return `${(value / 1_000_000).toFixed(1)}M`;
     } else if (value >= 1_000) {
-      return `${(value / 1_000).toFixed(1)}K`
+      return `${(value / 1_000).toFixed(1)}K`;
     }
-    return `${value}`
-  }
-  
+    return `${value}`;
+  }, []);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    if (active && payload && payload.length && label) {
       return (
-        <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-lg shadow-lg">
-          <p className="text-white/80 text-sm mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={`item-${index}`} className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
-              <span className="text-white/80 text-xs mr-2">{entry.name}:</span>
-              <span className="text-white font-medium text-xs">
-                {entry.name === "CNY" || entry.name === "JPY" ? "¥" : entry.name === "EUR" ? "€" : "$"}
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 shadow-lg">
+          <p className="mb-2 text-sm text-white/80">{label}</p>
+          {payload.map((entry, index) => (
+            <div key={`item-${index}`} className="mb-1 flex items-center">
+              <div
+                className="mr-2 h-3 w-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="mr-2 text-xs text-white/80">{entry.name}:</span>
+              <span className="text-xs font-medium text-white">
+                {entry.name === "CNY" || entry.name === "JPY"
+                  ? "¥"
+                  : entry.name === "EUR"
+                  ? "€"
+                  : "$"}
                 {entry.value.toLocaleString()}
               </span>
             </div>
           ))}
         </div>
-      )
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   return (
-    <Card className="bg-white/5 backdrop-blur-sm border border-white/10">
+    <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-white flex items-center">
-            <BarChart3 className="h-5 w-5 mr-2 text-indigo-400" />
+          <CardTitle className="flex items-center text-white">
+            <BarChart3 className="mr-2 h-5 w-5 text-indigo-400" />
             Balance History
           </CardTitle>
-          <CardDescription className="text-white/60">Track your balance changes over time</CardDescription>
+          <CardDescription className="text-white/60">
+            Track your balance changes over time
+          </CardDescription>
         </div>
         <div className="flex space-x-2">
-          <Tabs value={chartType} onValueChange={setChartType} className="w-auto">
-            <TabsList className="bg-zinc-800 border-zinc-700 h-8">
+          <Tabs value={chartType} onValueChange={(value: string) => setChartType(value as "line" | "area" | "bar")} className="w-auto">
+            <TabsList className="h-8 border-zinc-700 bg-zinc-800">
               <TabsTrigger
                 value="line"
                 className="h-6 px-2 text-xs data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
-                <LineChart className="h-3 w-3 mr-1" />
+                <LineChart className="mr-1 h-3 w-3" />
                 Line
               </TabsTrigger>
               <TabsTrigger
                 value="area"
                 className="h-6 px-2 text-xs data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
-                <LineChart className="h-3 w-3 mr-1" />
+                <LineChart className="mr-1 h-3 w-3" />
                 Area
               </TabsTrigger>
               <TabsTrigger
                 value="bar"
                 className="h-6 px-2 text-xs data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
               >
-                <BarChart3 className="h-3 w-3 mr-1" />
+                <BarChart3 className="mr-1 h-3 w-3" />
                 Bar
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <Tabs value={timeRange} onValueChange={setTimeRange} className="w-auto">
-            <TabsList className="bg-zinc-800 border-zinc-700 h-8">
+          <Tabs value={timeRange} onValueChange={(value: string) => setTimeRange(value as "7d" | "14d" | "30d")} className="w-auto">
+            <TabsList className="h-8 border-zinc-700 bg-zinc-800">
               <TabsTrigger
                 value="7d"
                 className="h-6 px-2 text-xs data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
@@ -148,16 +176,18 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
       </CardHeader>
       <CardContent>
         <div className="h-[350px] w-full">
-          <motion.div
+          <div
             key={`${chartType}-${timeRange}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
             className="h-full"
+            role="region"
+            aria-label={`Balance history ${chartType} chart for ${timeRange}`}
           >
             {chartType === "line" && (
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <RechartsLineChart
+                  data={filteredData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -211,7 +241,10 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
 
             {chartType === "area" && (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart
+                  data={filteredData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -227,17 +260,48 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Area type="monotone" dataKey="USD" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} stackId="1" />
-                  <Area type="monotone" dataKey="EUR" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} stackId="1" />
-                  <Area type="monotone" dataKey="CNY" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} stackId="1" />
-                  <Area type="monotone" dataKey="JPY" stroke="#10b981" fill="#10b981" fillOpacity={0.2} stackId="1" />
+                  <Area
+                    type="monotone"
+                    dataKey="USD"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.2}
+                    stackId="1"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="EUR"
+                    stroke="#8b5cf6"
+                    fill="#8b5cf6"
+                    fillOpacity={0.2}
+                    stackId="1"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="CNY"
+                    stroke="#ef4444"
+                    fill="#ef4444"
+                    fillOpacity={0.2}
+                    stackId="1"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="JPY"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.2}
+                    stackId="1"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             )}
 
             {chartType === "bar" && (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <BarChart
+                  data={filteredData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -260,15 +324,17 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </motion.div>
+          </div>
         </div>
 
-        <div className="flex justify-center mt-4 space-x-6">
+        <div className="mt-4 flex justify-center space-x-6">
           {Object.entries(currencies).map(([code, { icon: Icon, color }]) => (
             <div key={code} className="flex items-center">
-              <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${color.split(" ")[0]} mr-2`} />
-              <div className="flex items-center text-white/80 text-sm">
-                <Icon className="h-3 w-3 mr-1" />
+              <div
+                className={`mr-2 h-3 w-3 rounded-full bg-gradient-to-r ${color.split(" ")[0]}`}
+              />
+              <div className="flex items-center text-sm text-white/80">
+                <Icon className="mr-1 h-3 w-3" />
                 {code}
               </div>
             </div>
@@ -276,6 +342,5 @@ export function BalanceChart({ data, currencies }: BalanceChartProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

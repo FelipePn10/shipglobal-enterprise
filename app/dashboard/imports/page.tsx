@@ -18,19 +18,7 @@ import { toast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/dashboard/dashboard-layout';
 import ImportStatusCard from '@/components/dashboard/import-status-card';
 
-// Custom debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
-// Types for import data
+// Types
 interface ImportItem {
   importId: string;
   userId?: number;
@@ -43,6 +31,30 @@ interface ImportItem {
   progress: number;
   createdAt: string;
   lastUpdated: string;
+}
+
+interface APIImportResponse {
+  importId: string;
+  title: string;
+  status: string;
+  origin: string;
+  destination: string;
+  eta?: string | null;
+  progress?: number;
+  createdAt: string;
+  lastUpdated?: string;
+}
+
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 const statusColors: Record<ImportItem['status'], string> = {
@@ -85,6 +97,7 @@ export default function ImportsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
   const [importData, setImportData] = useState<ImportItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -108,9 +121,9 @@ export default function ImportsPage() {
     try {
       const headers: Record<string, string> = {};
       if (session.user.type === 'company' && session.user.companyId) {
-        headers['company-id'] = session.user.companyId;
+        headers['company-id'] = session.user.companyId.toString();
       } else {
-        headers['user-id'] = session.user.id;
+        headers['user-id'] = session.user.id.toString();
       }
 
       const response = await fetch('/api/imports', {
@@ -122,8 +135,8 @@ export default function ImportsPage() {
         throw new Error(`HTTP error ${response.status}`);
       }
 
-      const data = await response.json();
-      const formattedData: ImportItem[] = data.map((item: any) => ({
+      const data: APIImportResponse[] = await response.json();
+      const formattedData: ImportItem[] = data.map((item) => ({
         importId: item.importId,
         title: item.title,
         status: item.status as ImportItem['status'],
@@ -132,7 +145,7 @@ export default function ImportsPage() {
         eta: item.eta ?? null,
         lastUpdated: new Date(item.lastUpdated || item.createdAt).toLocaleString(),
         progress: Number(item.progress) || 0,
-        createdAt: item.createdAt || new Date().toISOString(),
+        createdAt: item.createdAt,
       }));
 
       setImportData(formattedData);
@@ -160,8 +173,8 @@ export default function ImportsPage() {
     return () => clearInterval(interval);
   }, [fetchImports, status, router]);
 
-  const filteredImports = useMemo(() => {
-    return importData.filter((item) => {
+  const filteredAndSortedImports = useMemo(() => {
+    const filtered = importData.filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         item.importId.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -176,7 +189,7 @@ export default function ImportsPage() {
       if (dateFilter === 'today') {
         matchesDate = itemDate.toDateString() === now.toDateString();
       } else if (dateFilter === 'week') {
-        const weekAgo = new Date(now.setDate(now.getDate() - 7));
+        const weekAgo = new Date(now.getDate() - 7);
         matchesDate = itemDate >= weekAgo;
       } else if (dateFilter === 'month') {
         const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
@@ -185,7 +198,16 @@ export default function ImportsPage() {
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [importData, debouncedSearch, statusFilter, dateFilter]);
+
+    return filtered.sort((a, b) => {
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === 'progress') {
+        return b.progress - a.progress;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [importData, debouncedSearch, statusFilter, dateFilter, sortBy]);
 
   const handleImportClick = useCallback(
     (id: string) => {
@@ -198,14 +220,15 @@ export default function ImportsPage() {
     setSearchQuery('');
     setStatusFilter('all');
     setDateFilter('all');
+    setSortBy('createdAt');
   }, []);
 
-  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFilter !== 'all';
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFilter !== 'all' || sortBy !== 'createdAt';
 
   if (status === 'loading' || isLoading) {
     return (
       <DashboardLayout>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-64 rounded-lg border border-white/10 bg-white/5 p-5" />
           ))}
@@ -226,6 +249,7 @@ export default function ImportsPage() {
             <Button
               variant="outline"
               className="border-white/10 text-white/80 hover:bg-white/5"
+              aria-label="Current date"
             >
               <Calendar className="mr-2 h-4 w-4" />
               {new Date().toLocaleDateString('en-US', {
@@ -237,6 +261,7 @@ export default function ImportsPage() {
             <Button
               className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
               onClick={() => router.push('/dashboard/imports/new')}
+              aria-label="Create new import"
             >
               <Package2 className="mr-2 h-4 w-4" />
               New Import
@@ -253,12 +278,14 @@ export default function ImportsPage() {
                 placeholder="Search imports by ID, title, origin, or destination..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-9 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
+                aria-label="Search imports"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  aria-label="Clear search"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -269,12 +296,13 @@ export default function ImportsPage() {
               size="sm"
               className="border-white/10 text-white/80 hover:bg-white/5"
               onClick={() => setShowFilters(!showFilters)}
+              aria-label={showFilters ? 'Hide filters' : 'Show filters'}
             >
               <Filter className="mr-2 h-4 w-4" />
               Filters
               {hasActiveFilters && (
                 <Badge className="ml-2 bg-white/10 text-white hover:bg-white/20">
-                  {(statusFilter !== 'all' ? 1 : 0) + (dateFilter !== 'all' ? 1 : 0)}
+                  {(searchQuery ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0) + (dateFilter !== 'all' ? 1 : 0)}
                 </Badge>
               )}
             </Button>
@@ -283,34 +311,70 @@ export default function ImportsPage() {
           {showFilters && (
             <div className="mt-4 grid grid-cols-1 gap-4 border-t border-white/10 pt-4 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm text-white/60">Status</label>
+                <label className="mb-2 block text-sm text-white/60" htmlFor="status-filter">
+                  Status
+                </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full border-white/10 bg-white/5 text-white/80">
+                  <SelectTrigger
+                    id="status-filter"
+                    className="w-full border-white/10 bg-white/5 text-white/80"
+                    aria-label="Filter by status"
+                  >
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent className="border-white/10 bg-white/10 backdrop-blur-lg">
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="customs">In Customs</SelectItem>
-                    <SelectItem value="shipping">Shipping</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="issue">Issues</SelectItem>
+                    <SelectItem value="all" className="text-white/80 hover:text-white">
+                      All Statuses
+                    </SelectItem>
+                    <SelectItem value="draft" className="text-white/80 hover:text-white">
+                      Draft
+                    </SelectItem>
+                    <SelectItem value="pending" className="text-white/80 hover:text-white">
+                      Pending
+                    </SelectItem>
+                    <SelectItem value="processing" className="text-white/80 hover:text-white">
+                      Processing
+                    </SelectItem>
+                    <SelectItem value="customs" className="text-white/80 hover:text-white">
+                      In Customs
+                    </SelectItem>
+                    <SelectItem value="shipping" className="text-white/80 hover:text-white">
+                      Shipping
+                    </SelectItem>
+                    <SelectItem value="delivered" className="text-white/80 hover:text-white">
+                      Delivered
+                    </SelectItem>
+                    <SelectItem value="issue" className="text-white/80 hover:text-white">
+                      Issues
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="mb-2 block text-sm text-white/60">Date Range</label>
+                <label className="mb-2 block text-sm text-white/60" htmlFor="date-filter">
+                  Date Range
+                </label>
                 <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-full border-white/10 bg-white/5 text-white/80">
+                  <SelectTrigger
+                    id="date-filter"
+                    className="w-full border-white/10 bg-white/5 text-white/80"
+                    aria-label="Filter by date"
+                  >
                     <SelectValue placeholder="Filter by date" />
                   </SelectTrigger>
                   <SelectContent className="border-white/10 bg-white/10 backdrop-blur-lg">
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">Last 7 Days</SelectItem>
-                    <SelectItem value="month">Last 30 Days</SelectItem>
+                    <SelectItem value="all" className="text-white/80 hover:text-white">
+                      All Time
+                    </SelectItem>
+                    <SelectItem value="today" className="text-white/80 hover:text-white">
+                      Today
+                    </SelectItem>
+                    <SelectItem value="week" className="text-white/80 hover:text-white">
+                      Last 7 Days
+                    </SelectItem>
+                    <SelectItem value="month" className="text-white/80 hover:text-white">
+                      Last 30 Days
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -320,6 +384,7 @@ export default function ImportsPage() {
                   className="w-full border-white/10 text-white/80 hover:bg-white/5"
                   onClick={clearFilters}
                   disabled={!hasActiveFilters}
+                  aria-label="Clear all filters"
                 >
                   Clear Filters
                 </Button>
@@ -328,27 +393,37 @@ export default function ImportsPage() {
           )}
         </div>
 
-        {filteredImports.length > 0 ? (
+        {filteredAndSortedImports.length > 0 ? (
           <>
             <div className="mb-4 flex items-center justify-between">
               <div className="text-white/60">
-                Showing <span className="font-medium text-white">{filteredImports.length}</span>{' '}
-                {filteredImports.length === 1 ? 'import' : 'imports'}
+                Showing{' '}
+                <span className="font-medium text-white">{filteredAndSortedImports.length}</span>{' '}
+                {filteredAndSortedImports.length === 1 ? 'import' : 'imports'}
                 {hasActiveFilters && <span> with active filters</span>}
               </div>
-              <Select defaultValue="createdAt">
-                <SelectTrigger className="w-[180px] border-white/10 bg-white/5 text-white/80">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger
+                  className="w-[180px] border-white/10 bg-white/5 text-white/80"
+                  aria-label="Sort imports"
+                >
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-white/10 backdrop-blur-lg">
-                  <SelectItem value="createdAt">Date (newest first)</SelectItem>
-                  <SelectItem value="title">Title (A-Z)</SelectItem>
-                  <SelectItem value="progress">Progress</SelectItem>
+                  <SelectItem value="createdAt" className="text-white/80 hover:text-white">
+                    Date (newest first)
+                  </SelectItem>
+                  <SelectItem value="title" className="text-white/80 hover:text-white">
+                    Title (A-Z)
+                  </SelectItem>
+                  <SelectItem value="progress" className="text-white/80 hover:text-white">
+                    Progress
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredImports.map((item) => (
+              {filteredAndSortedImports.map((item) => (
                 <ImportStatusCard
                   key={item.importId}
                   importId={item.importId}
@@ -379,6 +454,7 @@ export default function ImportsPage() {
                 onClick={clearFilters}
                 variant="outline"
                 className="border-white/10 text-white/80 hover:bg-white/5"
+                aria-label="Clear all filters"
               >
                 Clear All Filters
               </Button>
@@ -386,6 +462,7 @@ export default function ImportsPage() {
               <Button
                 className="bg-gradient-to-r from-indigo-500 to-rose-500 text-white hover:from-indigo-600 hover:to-rose-600"
                 onClick={() => router.push('/dashboard/imports/new')}
+                aria-label="Create your first import"
               >
                 <Package2 className="mr-2 h-4 w-4" />
                 Create Your First Import

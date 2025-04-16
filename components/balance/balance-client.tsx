@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { loadStripe } from "@stripe/stripe-js";
 import { DepositModal } from "@/components/balance/deposit-modal";
 import { WithdrawalModal } from "@/components/balance/withdrawal-modal";
 import { CurrencyCard } from "@/components/balance/currency-card";
@@ -15,18 +13,28 @@ import { BalanceSummary } from "@/components/balance/balance-summary";
 import { ExchangeRateTable } from "@/components/balance/exchange-rate-table";
 import { Plus, RefreshCw } from "lucide-react";
 import { CurrencyCode, PaymentCurrency, BalanceData, Transaction } from "@/types/balance";
+import type { LucideIcon } from "lucide-react";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
+// Types
+interface CurrencyDetails {
+  symbol: string;
+  name: string;
+  icon: LucideIcon;
+  color: string;
+}
 
 interface BalanceClientProps {
   initialBalances: BalanceData;
-  initialExchangeRates: Record<string, number>;
+  initialExchangeRates: Record<CurrencyCode, number>;
   initialTransactions: Transaction[];
-  initialHistoricalData: Array<{ date: string; USD: number; EUR: number; CNY: number; JPY: number }>;
-  currencies: Record<
-    CurrencyCode,
-    { symbol: string; name: string; icon: any; color: string }
-  >;
+  initialHistoricalData: Array<{
+    date: string;
+    USD: number;
+    EUR: number;
+    CNY: number;
+    JPY: number;
+  }>;
+  currencies: Record<CurrencyCode, CurrencyDetails>;
 }
 
 export function BalanceClient({
@@ -37,30 +45,44 @@ export function BalanceClient({
   currencies,
 }: BalanceClientProps) {
   const [balances, setBalances] = useState<BalanceData>(initialBalances);
-  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>(
+  const [exchangeRates, setExchangeRates] = useState<Record<CurrencyCode, number>>(
     initialExchangeRates
   );
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [historicalData, setHistoricalData] = useState<
-    Array<{ date: string; USD: number; EUR: number; CNY: number; JPY: number }>
+    Array<{
+      date: string;
+      USD: number;
+      EUR: number;
+      CNY: number;
+      JPY: number;
+    }>
   >(initialHistoricalData);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [depositCurrency, setDepositCurrency] = useState<CurrencyCode>("USD");
   const [loadingRates, setLoadingRates] = useState(false);
 
-  const fetchBalanceData = async () => {
+  const fetchBalanceData = useCallback(async () => {
     setLoadingRates(true);
     try {
       const res = await fetch("/api/balance", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch balance data");
-      const { balances: newBalances, exchangeRates: newRates, transactions: newTxs, historicalData: newHistory } = await res.json();
+      const {
+        balances: newBalances,
+        exchangeRates: newRates,
+        transactions: newTxs,
+        historicalData: newHistory,
+      } = await res.json();
       setBalances(newBalances);
       setExchangeRates(newRates);
       setTransactions(newTxs);
       setHistoricalData(newHistory);
-      toast({ title: "Exchange rates updated", description: "Latest market rates fetched." });
-    } catch (error) {
+      toast({
+        title: "Exchange rates updated",
+        description: "Latest market rates fetched.",
+      });
+    } catch {
       toast({
         title: "Failed to fetch rates",
         description: "Using last known rates.",
@@ -69,250 +91,267 @@ export function BalanceClient({
     } finally {
       setLoadingRates(false);
     }
-  };
+  }, []);
 
-  const handleDeposit = async (
-    targetCurrency: CurrencyCode,
-    amount: number,
-    paymentCurrency: PaymentCurrency,
-    clientSecret: string
-  ) => {
-    try {
-      // Update database via API
-      const response = await fetch("/api/balance/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currency: targetCurrency,
-          amount,
-          paymentCurrency,
-          paymentIntentId: clientSecret,
-        }),
-      });
+  const handleDeposit = useCallback(
+    async (
+      targetCurrency: CurrencyCode,
+      amount: number,
+      paymentCurrency: PaymentCurrency,
+      clientSecret: string
+    ) => {
+      try {
+        const response = await fetch("/api/balance/deposit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currency: targetCurrency,
+            amount,
+            paymentCurrency,
+            paymentIntentId: clientSecret,
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to record deposit");
-      }
-
-      const { balance, transaction } = await response.json();
-
-      // Update local state
-      setBalances((prev) => ({
-        ...prev,
-        [targetCurrency]: {
-          amount: balance.amount,
-          lastUpdated: balance.lastUpdated,
-        },
-      }));
-
-      setTransactions((prev) => [transaction, ...prev]);
-
-      // Update historical data
-      const today = new Date().toISOString().split("T")[0];
-      setHistoricalData((prev) => {
-        const lastDay = prev[prev.length - 1];
-        if (lastDay.date === today) {
-          return [
-            ...prev.slice(0, -1),
-            { ...lastDay, [targetCurrency]: balance.amount },
-          ];
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to record deposit");
         }
-        return [
+
+        const { balance, transaction } = await response.json();
+
+        setBalances((prev) => ({
           ...prev,
-          {
-            date: today,
-            USD: balances.USD.amount,
-            EUR: balances.EUR.amount,
-            CNY: balances.CNY.amount,
-            JPY: balances.JPY.amount,
-            [targetCurrency]: balance.amount,
+          [targetCurrency]: {
+            amount: balance.amount,
+            lastUpdated: balance.lastUpdated,
           },
-        ];
-      });
+        }));
 
-      toast({
-        title: "Deposit successful",
-        description: `${currencies[targetCurrency].symbol}${amount.toFixed(2)} added to ${targetCurrency} balance`,
-      });
-      setDepositModalOpen(false);
-    } catch (error) {
-      toast({
-        title: "Deposit failed",
-        description: (error as Error).message || "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+        setTransactions((prev) => [transaction, ...prev]);
 
-  const handleWithdrawal = async (targetCurrency: CurrencyCode, amount: number) => {
-    if (amount > balances[targetCurrency].amount) {
-      toast({ title: "Insufficient Balance", description: `Not enough ${targetCurrency}.`, variant: "destructive" });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/create-payout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount,
-          currency: targetCurrency,
-        }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create payout");
-      }
-
-      // Update database via API
-      const updateResponse = await fetch("/api/balance/withdrawal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currency: targetCurrency,
-          amount,
-          payoutId: result.payoutId,
-        }),
-      });
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        throw new Error(errorData.error || "Failed to record withdrawal");
-      }
-
-      const { balance, transaction } = await updateResponse.json();
-
-      setBalances((prev) => ({
-        ...prev,
-        [targetCurrency]: {
-          amount: balance.amount,
-          lastUpdated: balance.lastUpdated,
-        },
-      }));
-
-      setTransactions((prev) => [transaction, ...prev]);
-
-      // Update historical data
-      const today = new Date().toISOString().split("T")[0];
-      setHistoricalData((prev) => {
-        const lastDay = prev[prev.length - 1];
-        if (lastDay.date === today) {
+        const today = new Date().toISOString().split("T")[0];
+        setHistoricalData((prev) => {
+          const lastDay = prev[prev.length - 1];
+          if (lastDay.date === today) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastDay, [targetCurrency]: balance.amount },
+            ];
+          }
           return [
-            ...prev.slice(0, -1),
-            { ...lastDay, [targetCurrency]: balance.amount },
+            ...prev,
+            {
+              date: today,
+              USD: balances.USD.amount,
+              EUR: balances.EUR.amount,
+              CNY: balances.CNY.amount,
+              JPY: balances.JPY.amount,
+              [targetCurrency]: balance.amount,
+            },
           ];
+        });
+
+        toast({
+          title: "Deposit successful",
+          description: `${currencies[targetCurrency].symbol}${amount.toFixed(
+            2
+          )} added to ${targetCurrency} balance`,
+        });
+        setDepositModalOpen(false);
+      } catch (error) {
+        toast({
+          title: "Deposit failed",
+          description: (error as Error).message || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [balances, currencies]
+  );
+
+  const handleWithdrawal = useCallback(
+    async (targetCurrency: CurrencyCode, amount: number) => {
+      if (amount > balances[targetCurrency].amount) {
+        toast({
+          title: "Insufficient Balance",
+          description: `Not enough ${targetCurrency}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/create-payout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            currency: targetCurrency,
+          }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to create payout");
         }
-        return [
+
+        const updateResponse = await fetch("/api/balance/withdrawal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currency: targetCurrency,
+            amount,
+            payoutId: result.payoutId,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          throw new Error(errorData.error || "Failed to record withdrawal");
+        }
+
+        const { balance, transaction } = await updateResponse.json();
+
+        setBalances((prev) => ({
           ...prev,
-          {
-            date: today,
-            USD: balances.USD.amount,
-            EUR: balances.EUR.amount,
-            CNY: balances.CNY.amount,
-            JPY: balances.JPY.amount,
-            [targetCurrency]: balance.amount,
+          [targetCurrency]: {
+            amount: balance.amount,
+            lastUpdated: balance.lastUpdated,
           },
-        ];
-      });
+        }));
 
-      toast({
-        title: "Withdrawal Initiated",
-        description: `${amount} ${targetCurrency} requested (Payout ID: ${result.payoutId}).`,
-      });
-      setWithdrawalModalOpen(false);
-    } catch (error) {
-      toast({
-        title: "Withdrawal Failed",
-        description: (error as Error).message || "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+        setTransactions((prev) => [transaction, ...prev]);
 
-  const handleRefund = async (transactionId: string, amount: number, currency: CurrencyCode, paymentIntentId?: string) => {
-    if (!paymentIntentId) {
-      toast({ title: "Refund Failed", description: "Missing payment details.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/create-refund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentIntentId, amount }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create refund");
-      }
-
-      // Update database via API
-      const updateResponse = await fetch("/api/balance/refund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currency,
-          amount,
-          paymentIntentId,
-          refundId: result.refundId,
-        }),
-      });
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json();
-        throw new Error(errorData.error || "Failed to record refund");
-      }
-
-      const { balance, transaction } = await updateResponse.json();
-
-      setBalances((prev) => ({
-        ...prev,
-        [currency]: {
-          amount: balance.amount,
-          lastUpdated: balance.lastUpdated,
-        },
-      }));
-
-      setTransactions((prev) => [transaction, ...prev]);
-
-      // Update historical data
-      const today = new Date().toISOString().split("T")[0];
-      setHistoricalData((prev) => {
-        const lastDay = prev[prev.length - 1];
-        if (lastDay.date === today) {
+        const today = new Date().toISOString().split("T")[0];
+        setHistoricalData((prev) => {
+          const lastDay = prev[prev.length - 1];
+          if (lastDay.date === today) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastDay, [targetCurrency]: balance.amount },
+            ];
+          }
           return [
-            ...prev.slice(0, -1),
-            { ...lastDay, [currency]: balance.amount },
+            ...prev,
+            {
+              date: today,
+              USD: balances.USD.amount,
+              EUR: balances.EUR.amount,
+              CNY: balances.CNY.amount,
+              JPY: balances.JPY.amount,
+              [targetCurrency]: balance.amount,
+            },
           ];
-        }
-        return [
-          ...prev,
-          {
-            date: today,
-            USD: balances.USD.amount,
-            EUR: balances.EUR.amount,
-            CNY: balances.CNY.amount,
-            JPY: balances.JPY.amount,
-            [currency]: balance.amount,
-          },
-        ];
-      });
+        });
 
-      toast({
-        title: "Refund Processed",
-        description: `${amount} ${currency} refunded (Refund ID: ${result.refundId}).`,
-      });
-    } catch (error) {
-      toast({
-        title: "Refund Failed",
-        description: (error as Error).message || "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+        toast({
+          title: "Withdrawal Initiated",
+          description: `${amount} ${targetCurrency} requested (Payout ID: ${result.payoutId}).`,
+        });
+        setWithdrawalModalOpen(false);
+      } catch (error) {
+        toast({
+          title: "Withdrawal Failed",
+          description: (error as Error).message || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [balances]
+  );
+
+  const handleRefund = useCallback(
+    async (
+      transactionId: string,
+      amount: number,
+      currency: CurrencyCode,
+      paymentIntentId?: string
+    ) => {
+      if (!paymentIntentId) {
+        toast({
+          title: "Refund Failed",
+          description: "Missing payment details.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/create-refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentIntentId, amount }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to create refund");
+        }
+
+        const updateResponse = await fetch("/api/balance/refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currency,
+            amount,
+            paymentIntentId,
+            refundId: result.refundId,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          throw new Error(errorData.error || "Failed to record refund");
+        }
+
+        const { balance, transaction } = await updateResponse.json();
+
+        setBalances((prev) => ({
+          ...prev,
+          [currency]: {
+            amount: balance.amount,
+            lastUpdated: balance.lastUpdated,
+          },
+        }));
+
+        setTransactions((prev) => [transaction, ...prev]);
+
+        const today = new Date().toISOString().split("T")[0];
+        setHistoricalData((prev) => {
+          const lastDay = prev[prev.length - 1];
+          if (lastDay.date === today) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastDay, [currency]: balance.amount },
+            ];
+          }
+          return [
+            ...prev,
+            {
+              date: today,
+              USD: balances.USD.amount,
+              EUR: balances.EUR.amount,
+              CNY: balances.CNY.amount,
+              JPY: balances.JPY.amount,
+              [currency]: balance.amount,
+            },
+          ];
+        });
+
+        toast({
+          title: "Refund Processed",
+          description: `${amount} ${currency} refunded (Refund ID: ${result.refundId}).`,
+        });
+      } catch (error) {
+        toast({
+          title: "Refund Failed",
+          description: (error as Error).message || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [balances]
+  );
 
   const totalBalanceUSD = useMemo(() => {
     return Object.entries(balances).reduce((total, [currency, data]) => {
@@ -320,28 +359,34 @@ export function BalanceClient({
     }, 0);
   }, [balances, exchangeRates]);
 
-  const openDepositModal = (currency: CurrencyCode) => {
+  const openDepositModal = useCallback((currency: CurrencyCode) => {
     setDepositCurrency(currency);
     setDepositModalOpen(true);
-  };
+  }, []);
 
   return (
     <div className="mb-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Balance</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Balance</h1>
           <p className="text-white/60">Manage your multi-currency balances</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={fetchBalanceData} disabled={loadingRates}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchBalanceData}
+            disabled={loadingRates}
+            aria-label={loadingRates ? "Updating rates" : "Update rates"}
+          >
             {loadingRates ? (
               <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 Updating...
               </>
             ) : (
               <>
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Update Rates
               </>
             )}
@@ -349,18 +394,23 @@ export function BalanceClient({
           <Button
             className="bg-gradient-to-r from-indigo-500 to-rose-500"
             onClick={() => setDepositModalOpen(true)}
+            aria-label="New deposit"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             New Deposit
           </Button>
-          <Button variant="outline" onClick={() => setWithdrawalModalOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setWithdrawalModalOpen(true)}
+            aria-label="Withdraw"
+          >
             Withdraw
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="bg-white/5 border-white/10">
+        <TabsList className="border-white/10 bg-white/5">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="balances">Balances</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
@@ -377,7 +427,7 @@ export function BalanceClient({
         </TabsContent>
 
         <TabsContent value="balances" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {Object.entries(balances).map(([currency, data]) => (
               <CurrencyCard
                 key={currency}
@@ -394,7 +444,9 @@ export function BalanceClient({
                 onTransfer={() => {}}
                 exchangeRate={exchangeRates[currency as CurrencyCode] || 1}
                 color={currencies[currency as CurrencyCode].color}
-                recentTransactions={transactions.filter((t) => t.currency === (currency as CurrencyCode))}
+                recentTransactions={transactions.filter(
+                  (t) => t.currency === (currency as CurrencyCode)
+                )}
               />
             ))}
           </div>
@@ -424,7 +476,6 @@ export function BalanceClient({
         onDeposit={handleDeposit}
         currencies={currencies}
         initialCurrency={depositCurrency}
-        balances={balances}
         exchangeRates={exchangeRates}
       />
 

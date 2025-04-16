@@ -1,68 +1,120 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { useState, useCallback, useMemo } from "react";
+import { format, isValid } from "date-fns";
+import { CalendarIcon, Clock, MapPin, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { DialogFooter } from "@/components/ui/dialog";
 
-import { useState } from "react"
-import { format, isValid } from "date-fns"
-import { CalendarIcon, Clock, MapPin, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
-import { DialogFooter } from "@/components/ui/dialog"
+// Define interfaces for type safety
+interface EventType {
+  value: string;
+  label: string;
+  color: string;
+}
+interface EventData {
+  title: string;
+  description: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+  status: "confirmed" | "tentative" | "cancelled"; // Match the type from Event
+  location: string;
+  attendees: string[];
+  color: string;
+}
 
 interface EventFormProps {
-  onSubmit: (event: any) => void
-  eventTypes: Array<{ value: string; label: string; color: string }>
-  initialDate?: Date
+  onSubmit: (event: EventData) => void;
+  eventTypes: EventType[];
+  initialDate?: Date;
 }
 
 export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: EventFormProps) {
   // Ensure initialDate is valid
-  const validInitialDate = isValid(initialDate) ? initialDate : new Date()
+  const validInitialDate = isValid(initialDate) ? initialDate : new Date();
 
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [date, setDate] = useState<Date | undefined>(validInitialDate)
-  const [startTime, setStartTime] = useState("09:00")
-  const [endTime, setEndTime] = useState("10:00")
-  const [type, setType] = useState("")
-  const [status, setStatus] = useState("confirmed")
-  const [location, setLocation] = useState("")
-  const [attendees, setAttendees] = useState("")
-  const [color, setColor] = useState("")
+  // State management
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    date: Date;
+    startTime: string;
+    endTime: string;
+    type: string;
+    status: "confirmed" | "tentative" | "cancelled";
+    location: string;
+    attendees: string;
+  }>({
+    title: "",
+    description: "",
+    date: validInitialDate,
+    startTime: "09:00",
+    endTime: "10:00",
+    type: "",
+    status: "confirmed",
+    location: "",
+    attendees: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  // Handle input changes
+  const handleInputChange = useCallback(
+    (field: keyof typeof formData, value: string | Date) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
-    // Find the color for the selected event type
-    const selectedType = eventTypes.find((t) => t.value === type)
-    const eventColor = color || (selectedType ? selectedType.color : "#4f46e5")
+  // Handle form submission
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
 
-    onSubmit({
-      title,
-      description,
-      date: date && isValid(date) ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-      startTime,
-      endTime,
-      type,
-      status,
-      location,
-      attendees: attendees
-        .split(",")
-        .map((a) => a.trim())
-        .filter((a) => a),
-      color: eventColor,
-    })
-  }
+      const selectedType = eventTypes.find((t) => t.value === formData.type);
+      const eventColor = selectedType?.color || "#4f46e5";
+
+      onSubmit({
+        title: formData.title,
+        description: formData.description,
+        date: isValid(formData.date)
+          ? format(formData.date, "yyyy-MM-dd")
+          : format(new Date(), "yyyy-MM-dd"),
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        type: formData.type,
+        status: formData.status,
+        location: formData.location,
+        attendees: formData.attendees
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a),
+        color: eventColor,
+      });
+    },
+    [formData, eventTypes, onSubmit]
+  );
+
+  // Status options
+  const statusOptions = useMemo(
+    () => [
+      { value: "confirmed", label: "Confirmed" },
+      { value: "tentative", label: "Tentative" },
+      { value: "cancelled", label: "Cancelled" },
+    ],
+    []
+  );
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-4 py-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid gap-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="title" className="text-right">
             Title
@@ -71,9 +123,10 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             id="title"
             placeholder="Event title"
             className="col-span-3"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={formData.title}
+            onChange={(e) => handleInputChange("title", e.target.value)}
             required
+            autoFocus
           />
         </div>
 
@@ -85,8 +138,8 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             id="description"
             placeholder="Event description"
             className="col-span-3"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={formData.description}
+            onChange={(e) => handleInputChange("description", e.target.value)}
           />
         </div>
 
@@ -96,14 +149,25 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn("col-span-3 justify-start text-left font-normal", !date && "text-muted-foreground")}
+                className={cn(
+                  "col-span-3 justify-start text-left font-normal",
+                  !formData.date && "text-muted-foreground"
+                )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date && isValid(date) ? format(date, "PPP") : "Select date"}
+                {formData.date && isValid(formData.date)
+                  ? format(formData.date, "PPP")
+                  : "Select date"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
-              <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+              <Calendar
+                mode="single"
+                selected={formData.date}
+                onSelect={(date) => date && handleInputChange("date", date)}
+                initialFocus
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              />
             </PopoverContent>
           </Popover>
         </div>
@@ -117,8 +181,8 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             <Input
               id="start-time"
               type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              value={formData.startTime}
+              onChange={(e) => handleInputChange("startTime", e.target.value)}
               required
             />
           </div>
@@ -130,7 +194,13 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
           </Label>
           <div className="col-span-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+            <Input
+              id="end-time"
+              type="time"
+              value={formData.endTime}
+              onChange={(e) => handleInputChange("endTime", e.target.value)}
+              required
+            />
           </div>
         </div>
 
@@ -138,7 +208,11 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
           <Label htmlFor="event-type" className="text-right">
             Type
           </Label>
-          <Select value={type} onValueChange={setType} required>
+          <Select
+            value={formData.type}
+            onValueChange={(value) => handleInputChange("type", value)}
+            required
+          >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder="Select event type" />
             </SelectTrigger>
@@ -146,7 +220,10 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
               {eventTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: type.color }}></div>
+                    <div
+                      className="mr-2 h-3 w-3 rounded-full"
+                      style={{ backgroundColor: type.color }}
+                    />
                     {type.label}
                   </div>
                 </SelectItem>
@@ -159,14 +236,20 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
           <Label htmlFor="event-status" className="text-right">
             Status
           </Label>
-          <Select value={status} onValueChange={setStatus} required>
+          <Select
+            value={formData.status}
+            onValueChange={(value) => handleInputChange("status", value)}
+            required
+          >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="tentative">Tentative</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -180,8 +263,8 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             <Input
               id="location"
               placeholder="Event location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={formData.location}
+              onChange={(e) => handleInputChange("location", e.target.value)}
             />
           </div>
         </div>
@@ -195,16 +278,18 @@ export function EventForm({ onSubmit, eventTypes, initialDate = new Date() }: Ev
             <Input
               id="attendees"
               placeholder="Comma-separated list of attendees"
-              value={attendees}
-              onChange={(e) => setAttendees(e.target.value)}
+              value={formData.attendees}
+              onChange={(e) => handleInputChange("attendees", e.target.value)}
             />
           </div>
         </div>
       </div>
+
       <DialogFooter>
-        <Button type="submit">Save Event</Button>
+        <Button type="submit" disabled={!formData.title || !formData.type}>
+          Save Event
+        </Button>
       </DialogFooter>
     </form>
-  )
+  );
 }
-
