@@ -1,4 +1,22 @@
 services:
+  mongodb:
+    image: mongo:6.0
+    container_name: hero-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: hero_transactions
+    ports:
+      - "27017:27017"
+    volumes:
+      - hero-mongodb-data:/data/db
+    networks:
+      - hero-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   mysql:
     image: mysql:8.0
     container_name: hero-mysql
@@ -41,6 +59,7 @@ services:
 
 volumes:
   hero-mysql-data:
+  hero-mongo-data:
 
 networks:
   hero-network:

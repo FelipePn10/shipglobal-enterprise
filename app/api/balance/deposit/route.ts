@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode, PaymentCurrency } from "@/types/balance";
+import { Transaction as MongoTransaction } from "@/lib/mongoModels";
+import clientPromise from "@/lib/mongo";
 
 interface DepositRequest {
   currency: CurrencyCode;
@@ -67,105 +69,124 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payment intent ID" }, { status: 400 });
     }
 
-    // Update or insert balance
-    const existingBalance = await db
-      .select()
-      .from(balances)
-      .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
+    // Connect to MongoDB
+    const mongoClient = await clientPromise;
+    const mongoDb = mongoClient.db();
+    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
 
-    let updatedBalance: BalanceRecord;
-    if (existingBalance.length > 0) {
-      // For updates in MySQL with Drizzle, we need to select after update
-      await db
-        .update(balances)
-        .set({
-          amount: (Number(existingBalance[0].amount) + amount).toFixed(2),
-          lastUpdated: new Date(),
-        })
-        .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
-      
-      // Get the updated balance
-      const [balance] = await db
+    // Start transaction (MySQL only - MongoDB will be atomic)
+    const mysqlResults = await db.transaction(async (tx) => {
+      // Update or insert balance
+      const existingBalance = await tx
         .select()
         .from(balances)
         .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
-      
-      if (!balance) {
-        throw new Error("Failed to retrieve updated balance");
+
+      let updatedBalance: BalanceRecord;
+      if (existingBalance.length > 0) {
+        await tx
+          .update(balances)
+          .set({
+            amount: (Number(existingBalance[0].amount) + amount).toFixed(2),
+            lastUpdated: new Date(),
+          })
+          .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
+
+        const [balance] = await tx
+          .select()
+          .from(balances)
+          .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
+        
+        if (!balance) throw new Error("Failed to retrieve updated balance");
+        updatedBalance = {
+          ...balance,
+          currency: balance.currency as CurrencyCode, // Cast currency to CurrencyCode
+        };
+      } else {
+        const insertedId = await tx
+          .insert(balances)
+          .values({
+            userId,
+            currency,
+            amount: amount.toFixed(2),
+            lastUpdated: new Date(),
+          })
+          .$returningId();
+        
+        const [balance] = await tx
+          .select()
+          .from(balances)
+          .where(eq(balances.id, insertedId[0].id));
+        
+        if (!balance) throw new Error("Failed to retrieve newly created balance");
+        updatedBalance = {
+          ...balance,
+          currency: balance.currency as CurrencyCode,
+        };
       }
-      updatedBalance = {
-        ...balance,
-        currency: balance.currency as CurrencyCode,
-      };
-    } else {
-      // For inserts in MySQL with Drizzle, use $returningId
-      const insertedId = await db
-        .insert(balances)
+
+      // Record transaction in MySQL
+      const transactionIdArray = await tx
+        .insert(transactions)
         .values({
           userId,
-          currency,
+          type: "deposit",
           amount: amount.toFixed(2),
-          lastUpdated: new Date(),
+          currency,
+          date: new Date(),
+          status: "completed",
+          description: `Deposit of ${amount.toFixed(2)} ${currency}`,
+          paymentIntentId,
         })
         .$returningId();
       
-      // Get the newly inserted balance
-      const [balance] = await db
+      const transactionId = transactionIdArray[0].id;
+
+      const [newTransaction] = await tx
         .select()
-        .from(balances)
-        .where(eq(balances.id, insertedId[0].id));
+        .from(transactions)
+        .where(eq(transactions.id, transactionId));
       
-      if (!balance) {
-        throw new Error("Failed to retrieve newly created balance");
-      }
-      updatedBalance = {
-        ...balance,
-        currency: balance.currency as CurrencyCode,
-      };
-    }
+      if (!newTransaction) throw new Error("Failed to retrieve created transaction");
 
-    // Record transaction using $returningId
-    const transactionIdArray = await db
-      .insert(transactions)
-      .values({
-        userId,
-        type: "deposit",
-        amount: amount.toFixed(2),
-        currency,
-        date: new Date(),
-        status: "completed",
-        description: `Deposit of ${amount.toFixed(2)} ${currency}`,
-        paymentIntentId,
-      })
-      .$returningId();
-    
-    const transactionId = transactionIdArray[0].id;
+      return { updatedBalance, newTransaction };
+    });
 
-    // Get the complete transaction record
-    const [newTransaction] = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.id, transactionId));
-    
-    if (!newTransaction) {
-      throw new Error("Failed to retrieve created transaction");
-    }
+    // Record transaction in MongoDB
+    const mongoTransaction: MongoTransaction = {
+      userId,
+      type: "deposit",
+      amount,
+      currency,
+      status: "completed",
+      paymentIntentId,
+      description: `Deposit of ${amount.toFixed(2)} ${currency}`,
+      metadata: {
+        mysqlTransactionId: mysqlResults.newTransaction.id,
+        paymentCurrency,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
 
     return NextResponse.json({
       balance: {
-        amount: parseFloat(updatedBalance.amount),
-        currency: updatedBalance.currency,
-        lastUpdated: updatedBalance.lastUpdated.toISOString(),
+        amount: parseFloat(mysqlResults.updatedBalance.amount),
+        currency: mysqlResults.updatedBalance.currency,
+        lastUpdated: mysqlResults.updatedBalance.lastUpdated.toISOString(),
       },
       transaction: {
-        id: `tx-${newTransaction.id}`,
-        type: newTransaction.type,
-        amount: parseFloat(newTransaction.amount),
-        currency: newTransaction.currency,
-        date: newTransaction.date.toISOString(),
-        status: newTransaction.status,
-        description: newTransaction.description,
-        paymentIntentId: newTransaction.paymentIntentId,
+        id: `tx-${mysqlResults.newTransaction.id}`,
+        mongoId: mongoResult.insertedId.toString(),
+        type: mysqlResults.newTransaction.type,
+        amount: parseFloat(mysqlResults.newTransaction.amount),
+        currency: mysqlResults.newTransaction.currency,
+        date: mysqlResults.newTransaction.date.toISOString(),
+        status: mysqlResults.newTransaction.status,
+        description: mysqlResults.newTransaction.description,
+        paymentIntentId: mysqlResults.newTransaction.paymentIntentId,
       },
     });
   } catch (error) {

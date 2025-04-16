@@ -6,6 +6,9 @@ import { balances, transactions } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode } from "@/types/balance";
 
+import { Transaction as MongoTransaction } from "@/lib/mongoModels";
+import clientPromise from "@/lib/mongo";
+
 interface RefundRequest {
   currency: CurrencyCode;
   amount: number;
@@ -46,88 +49,114 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid refundId" }, { status: 400 });
     }
 
-    // Check existing balance
-    const existingBalance = await db
-      .select({ amount: balances.amount })
-      .from(balances)
-      .where(and(eq(balances.userId, userId), eq(balances.currency, currency)))
-      .limit(1);
+    // Connect to MongoDB
+    const mongoClient = await clientPromise;
+    const mongoDb = mongoClient.db();
+    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
 
-    let updatedBalance: { amount: string; lastUpdated: Date };
-    if (existingBalance.length > 0) {
-      // For MySQL with Drizzle, we need to perform update then select
-      await db
-        .update(balances)
-        .set({
-          amount: (Number(existingBalance[0].amount) - amount).toFixed(2),
-          lastUpdated: new Date(),
-        })
-        .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
-      
-      // Get the updated balance
-      [updatedBalance] = (await db
-        .select()
+    // Start transaction (MySQL only)
+    const mysqlResults = await db.transaction(async (tx) => {
+      // Check existing balance
+      const existingBalance = await tx
+        .select({ amount: balances.amount })
         .from(balances)
-        .where(and(eq(balances.userId, userId), eq(balances.currency, currency)))) as { amount: string; lastUpdated: Date }[];
-    } else {
-      // For inserts in MySQL with Drizzle, use $returningId
-      const insertedId = await db
-        .insert(balances)
+        .where(and(eq(balances.userId, userId), eq(balances.currency, currency)))
+        .limit(1);
+
+      let updatedBalance: { amount: string; lastUpdated: Date };
+      if (existingBalance.length > 0) {
+        await tx
+          .update(balances)
+          .set({
+            amount: (Number(existingBalance[0].amount) - amount).toFixed(2),
+            lastUpdated: new Date(),
+          })
+          .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
+        
+        [updatedBalance] = (await tx
+          .select()
+          .from(balances)
+          .where(and(eq(balances.userId, userId), eq(balances.currency, currency)))) as {
+            amount: string;
+            lastUpdated: Date;
+          }[];
+      } else {
+        const insertedId = await tx
+          .insert(balances)
+          .values({
+            userId,
+            currency,
+            amount: (-amount).toFixed(2),
+            lastUpdated: new Date(),
+          })
+          .$returningId();
+        
+        [updatedBalance] = await tx
+          .select()
+          .from(balances)
+          .where(eq(balances.id, Number(insertedId[0].id)));
+      }
+
+      // Record transaction in MySQL
+      const transactionIdResult = await tx
+        .insert(transactions)
         .values({
           userId,
+          type: "refund",
+          amount: amount.toFixed(2),
           currency,
-          amount: (-amount).toFixed(2),
-          lastUpdated: new Date(),
+          date: new Date(),
+          status: "completed",
+          description: `Refund of ${amount.toFixed(2)} ${currency} (Refund ID: ${refundId})`,
+          paymentIntentId,
         })
         .$returningId();
       
-      // Extract the inserted ID
-      const balanceId = Array.isArray(insertedId) ? insertedId[0] : insertedId;
+      const transactionId = transactionIdResult[0].id;
 
-      // Get the newly inserted balance
-      [updatedBalance] = await db
+      const [newTransaction] = await tx
         .select()
-        .from(balances)
-        .where(eq(balances.id, Number(balanceId)));
-    }
+        .from(transactions)
+        .where(eq(transactions.id, transactionId));
 
-    // Record transaction using $returningId
-    const transactionIdResult = await db
-      .insert(transactions)
-      .values({
-        userId,
-        type: "refund",
-        amount: amount.toFixed(2),
-        currency,
-        date: new Date(),
-        status: "completed",
-        description: `Refund of ${amount.toFixed(2)} ${currency} (Refund ID: ${refundId})`,
-        paymentIntentId,
-      })
-      .$returningId();
-    
-    const transactionId = Array.isArray(transactionIdResult) ? transactionIdResult[0] : transactionIdResult as number;
+      return { updatedBalance, newTransaction };
+    });
 
-    // Get the complete transaction record
-    const [newTransaction] = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.id, typeof transactionId === "number" ? transactionId : transactionId.id));
+    // Record transaction in MongoDB
+    const mongoTransaction: MongoTransaction = {
+      userId,
+      type: "refund",
+      amount,
+      currency,
+      status: "completed",
+      paymentIntentId,
+      refundId,
+      description: `Refund of ${amount.toFixed(2)} ${currency} (Refund ID: ${refundId})`,
+      metadata: {
+        mysqlTransactionId: mysqlResults.newTransaction.id,
+        originalPaymentIntentId: paymentIntentId,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
 
     return NextResponse.json({
       balance: {
-        amount: parseFloat(updatedBalance.amount as string),
-        lastUpdated: updatedBalance.lastUpdated.toISOString(),
+        amount: parseFloat(mysqlResults.updatedBalance.amount),
+        lastUpdated: mysqlResults.updatedBalance.lastUpdated.toISOString(),
       },
       transaction: {
-        id: `tx-${newTransaction.id}`,
-        type: newTransaction.type,
-        amount: parseFloat(newTransaction.amount as string),
-        currency: newTransaction.currency as CurrencyCode,
-        date: (newTransaction.date as Date).toISOString(),
-        status: newTransaction.status,
-        description: newTransaction.description,
-        paymentIntentId: newTransaction.paymentIntentId,
+        id: `tx-${mysqlResults.newTransaction.id}`,
+        mongoId: mongoResult.insertedId.toString(),
+        type: mysqlResults.newTransaction.type,
+        amount: parseFloat(mysqlResults.newTransaction.amount),
+        currency: mysqlResults.newTransaction.currency,
+        date: mysqlResults.newTransaction.date.toISOString(),
+        status: mysqlResults.newTransaction.status,
+        description: mysqlResults.newTransaction.description,
+        paymentIntentId: mysqlResults.newTransaction.paymentIntentId,
       },
     });
   } catch (error) {
