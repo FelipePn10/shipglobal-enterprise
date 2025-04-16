@@ -41,7 +41,7 @@ declare module '@/types/balance' {
 }
 
 declare module '@/lib/mongoModels' {
-  import { CurrencyCode } from '@/types/balance';
+
 
 
   interface TransactionMetadata {
@@ -69,7 +69,7 @@ declare module '@/lib/mongoModels' {
     description?: string;
     quantity: number;
     price: number;
-    currency: CurrencyCode;
+    //currency: CurrencyCode;
     weight?: number;
     dimensions?: {
       length: number;
