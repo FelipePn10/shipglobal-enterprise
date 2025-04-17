@@ -17,7 +17,7 @@ const ToastViewport = React.forwardRef<
     ref={ref}
     className={cn(
       "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
-      className,
+      className
     )}
     {...props}
   />
@@ -36,7 +36,7 @@ const toastVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  },
+  }
 )
 
 const Toast = React.forwardRef<
@@ -55,7 +55,7 @@ const ToastAction = React.forwardRef<
     ref={ref}
     className={cn(
       "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
-      className,
+      className
     )}
     {...props}
   />
@@ -70,7 +70,7 @@ const ToastClose = React.forwardRef<
     ref={ref}
     className={cn(
       "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
-      className,
+      className
     )}
     toast-close=""
     {...props}
@@ -125,37 +125,21 @@ type ToasterToast = ToastProps & {
   visible?: boolean
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
-
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
-}
-
-type ActionType = typeof actionTypes
-
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
+      type: "ADD_TOAST"
       toast: ToasterToast
     }
   | {
-      type: ActionType["UPDATE_TOAST"]
+      type: "UPDATE_TOAST"
       toast: Partial<ToasterToast>
     }
   | {
-      type: ActionType["DISMISS_TOAST"]
+      type: "DISMISS_TOAST"
       toastId?: string
     }
   | {
-      type: ActionType["REMOVE_TOAST"]
+      type: "REMOVE_TOAST"
       toastId?: string
     }
 
@@ -215,7 +199,7 @@ const reducer = (state: State, action: Action): State => {
                 open: false,
                 visible: false,
               }
-            : t,
+            : t
         ),
       }
     }
@@ -276,6 +260,13 @@ function toast({ ...props }: Toast) {
   }
 }
 
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
+}
+
+let count = 0
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -297,38 +288,25 @@ function useToast() {
 }
 
 export { useToast, toast }
-import { useToast as useToastHook } from "@/hooks/use-toast"
 
+// Toaster component
 export function Toaster() {
-  const { toasts, dismiss } = useToastHook()
+  const { toasts } = useToast()
 
   return (
-    <div className="fixed top-0 right-0 z-50 flex flex-col items-end gap-2 p-4 max-h-screen overflow-hidden">
-      {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={cn(
-            "flex w-full max-w-md items-center justify-between rounded-lg border bg-background p-4 shadow-lg transition-all duration-300 ease-in-out",
-            toast.visible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
-            toast.variant === "destructive" && "border-destructive bg-destructive text-destructive-foreground",
-          )}
-        >
-          <div className="grid gap-1">
-            {toast.title && <div className="text-sm font-semibold">{toast.title}</div>}
-            {toast.description && <div className="text-sm opacity-90">{toast.description}</div>}
-          </div>
-          <button
-            onClick={() => dismiss(toast.id)}
-            className={cn(
-              "ml-4 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100",
-              toast.variant === "destructive" ? "text-destructive-foreground" : "text-foreground",
-            )}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
-    </div>
+    <ToastProvider>
+      <ToastViewport>
+        {toasts.map(({ id, title, description, action, variant, ...props }) => (
+          <Toast key={id} variant={variant} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && <ToastDescription>{description}</ToastDescription>}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        ))}
+      </ToastViewport>
+    </ToastProvider>
   )
 }
-

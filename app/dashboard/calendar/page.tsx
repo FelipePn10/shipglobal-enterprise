@@ -26,7 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { toast } from "@/components/ui/use-toast"; // Assuming a toast component exists
+import { toast } from "@/components/ui/toast";
 import { DayView } from "@/components/calendar/day-view";
 import { EventForm } from "@/components/calendar/event-form";
 import { EventList } from "@/components/calendar/event-list";
@@ -34,6 +34,8 @@ import { EventSearch } from "@/components/calendar/event-search";
 import { EventStatistics } from "@/components/calendar/event-statistics";
 import { WeekView } from "@/components/calendar/week-view";
 import { MonthView } from "@/components/calendar/moth-view";
+
+
 interface Event {
   id: number;
   title: string;
@@ -323,7 +325,7 @@ export default function CalendarPage() {
         return matchesQuery && matchesType;
       });
       setFilteredEvents(filtered);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to search events.",

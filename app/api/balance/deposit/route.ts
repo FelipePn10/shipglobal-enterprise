@@ -5,9 +5,8 @@ import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { CurrencyCode, PaymentCurrency } from "@/types/balance";
-import { Transaction as MongoTransaction, TransactionStatus } from "@/lib/mongoModels";
+import { Transaction as MongoTransaction } from "@/lib/mongoModels";
 import clientPromise from "@/lib/mongo";
-import { TransactionCollection } from "@/lib/mongo/collections/transactions";
 
 interface DepositRequest {
   currency: CurrencyCode;
@@ -24,19 +23,9 @@ interface BalanceRecord {
   lastUpdated: Date;
 }
 
-interface TransactionRecord {
-  id: number;
-  type: string;
-  amount: string;
-  currency: CurrencyCode;
-  date: Date;
-  status: string;
-  description: string | null;
-  paymentIntentId: string | null;
-}
-
 export async function POST(req: Request) {
   try {
+    // Authenticate user
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.type !== "user") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,35 +36,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
+    // Parse and validate request body
     const body = await req.json();
     const { currency, amount, paymentCurrency, paymentIntentId } = body as DepositRequest;
 
-    // Validate currency
     if (!["USD", "EUR", "CNY", "JPY"].includes(currency)) {
       return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
     }
 
-    // Validate amount
     if (typeof amount !== "number" || amount <= 0 || !Number.isFinite(amount)) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    // Validate payment currency
     if (!["USD", "EUR", "CNY", "JPY", "BRL"].includes(paymentCurrency)) {
       return NextResponse.json({ error: "Invalid payment currency" }, { status: 400 });
     }
 
-    // Validate payment intent ID
     if (typeof paymentIntentId !== "string" || !paymentIntentId.trim()) {
       return NextResponse.json({ error: "Invalid payment intent ID" }, { status: 400 });
     }
 
-    // Connect to MongoDB
-    const mongoClient = await clientPromise;
-    const mongoDb = mongoClient.db();
-    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
-
-    // Start transaction (MySQL only - MongoDB will be atomic)
+    // Start MySQL transaction
     const mysqlResults = await db.transaction(async (tx) => {
       // Update or insert balance
       const existingBalance = await tx
@@ -97,11 +78,11 @@ export async function POST(req: Request) {
           .select()
           .from(balances)
           .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
-        
+
         if (!balance) throw new Error("Failed to retrieve updated balance");
         updatedBalance = {
           ...balance,
-          currency: balance.currency as CurrencyCode, // Cast currency to CurrencyCode
+          currency: balance.currency as CurrencyCode,
         };
       } else {
         const insertedId = await tx
@@ -113,12 +94,12 @@ export async function POST(req: Request) {
             lastUpdated: new Date(),
           })
           .$returningId();
-        
+
         const [balance] = await tx
           .select()
           .from(balances)
           .where(eq(balances.id, insertedId[0].id));
-        
+
         if (!balance) throw new Error("Failed to retrieve newly created balance");
         updatedBalance = {
           ...balance,
@@ -135,31 +116,36 @@ export async function POST(req: Request) {
           amount: amount.toFixed(2),
           currency,
           date: new Date(),
-          status: "completed" as TransactionStatus,
+          status: "completed",
           description: `Deposit of ${amount.toFixed(2)} ${currency}`,
           paymentIntentId,
         })
         .$returningId();
-      
+
       const transactionId = transactionIdArray[0].id;
 
       const [newTransaction] = await tx
         .select()
         .from(transactions)
         .where(eq(transactions.id, transactionId));
-      
+
       if (!newTransaction) throw new Error("Failed to retrieve created transaction");
 
       return { updatedBalance, newTransaction };
     });
 
+    // Connect to MongoDB
+    const mongoClient = await clientPromise;
+    const mongoDb = mongoClient.db();
+    const transactionsCollection = mongoDb.collection<MongoTransaction>("transactions");
+
     // Record transaction in MongoDB
-    const mongoTransaction = await TransactionCollection.create({
+    const mongoTransaction: MongoTransaction = {
       userId,
       type: "deposit",
       amount,
       currency,
-      status: "completed" as TransactionStatus,
+      status: "completed",
       description: `Deposit of ${amount.toFixed(2)} ${currency}`,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -168,31 +154,12 @@ export async function POST(req: Request) {
         mysqlUserId: userId,
         paymentIntentId,
         paymentCurrency,
-        ipAddress: req.headers.get('x-forwarded-for') || '',
-        userAgent: req.headers.get('user-agent') || ''
-      }
-    });
-    const { _id, ...transactionData } = mongoTransaction; // Exclude _id field
-    const completeTransactionData: MongoTransaction = {
-      userId,
-      type: "deposit" as const,
-      amount,
-      currency,
-      status: "completed" as const,
-      description: `Deposit of ${amount.toFixed(2)} ${currency}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      metadata: {
-        mysqlTransactionId: mysqlResults.newTransaction.id,
-        mysqlUserId: userId,
-        paymentIntentId,
-        paymentCurrency,
-        ipAddress: req.headers.get('x-forwarded-for') || '',
-        userAgent: req.headers.get('user-agent') || ''
-      }
+        ipAddress: req.headers.get("x-forwarded-for") || "",
+        userAgent: req.headers.get("user-agent") || "",
+      },
     };
-    
-    const mongoResult = await transactionsCollection.insertOne(completeTransactionData);
+
+    const mongoResult = await transactionsCollection.insertOne(mongoTransaction);
 
     return NextResponse.json({
       balance: {
@@ -213,11 +180,11 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Deposit Error:", error);
+    console.error("Deposit Error:", {
+      error,
+      userId: parseInt((await getServerSession(authOptions))?.user?.id || "0", 10) || 0,
+    });
     const errorMessage = error instanceof Error ? error.message : "Failed to process deposit";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
