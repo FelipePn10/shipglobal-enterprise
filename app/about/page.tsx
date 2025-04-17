@@ -182,7 +182,7 @@ export default function AboutPage() {
 
               <div className="absolute -bottom-6 -right-6 bg-gradient-to-br from-indigo-500/20 to-rose-500/20 rounded-xl p-6 border border-white/10 backdrop-blur-sm">
                 <p className={cn("text-xl text-white/90", pacifico.className)}>
-                  "Connecting the world, one package at a time"
+                  Connecting the world, one package at a time
                 </p>
               </div>
             </motion.div>
@@ -266,7 +266,7 @@ export default function AboutPage() {
             <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-rose-500 mx-auto mb-8" />
 
             <p className="text-white/70 leading-relaxed">
-              From our humble beginnings to our current global presence, we've been on a mission to revolutionize
+              From our humble beginnings to our current global presence, we ve been on a mission to revolutionize
               international shopping and product access.
             </p>
           </motion.div>

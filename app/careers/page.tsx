@@ -178,20 +178,20 @@ export default function CareersPage() {
               </h2>
 
               <p className="text-white/70 mb-6 leading-relaxed">
-                At Redirex Solutions, we're building a world where geographical boundaries no longer limit access
+                At Redirex Solutions, were building a world where geographical boundaries no longer limit access
                 to products and services. Our team is passionate about connecting people with the global marketplace and
                 creating innovative solutions to complex logistics challenges.
               </p>
 
               <p className="text-white/70 mb-6 leading-relaxed">
-                We're a diverse, distributed team working across multiple time zones and cultures. This global
+                Were a diverse, distributed team working across multiple time zones and cultures. This global
                 perspective is at the heart of everything we do, allowing us to better understand and serve our
                 international customer base.
               </p>
 
               <p className="text-white/70 leading-relaxed">
-                If you're excited about transforming international commerce and want to be part of a fast-growing
-                company that values innovation, excellence, and work-life balance, we'd love to hear from you.
+                If you are excited about transforming international commerce and want to be part of a fast-growing
+                company that values innovation, excellence, and work-life balance, we d love to hear from you.
               </p>
             </motion.div>
 
@@ -214,7 +214,7 @@ export default function CareersPage() {
               </div>
 
               <div className="absolute -bottom-6 -right-6 bg-gradient-to-br from-indigo-500/20 to-rose-500/20 rounded-xl p-6 border border-white/10 backdrop-blur-sm">
-                <p className={cn("text-xl text-white/90", pacifico.className)}>"Building bridges across borders"</p>
+                <p className={cn("text-xl text-white/90", pacifico.className)}> Building bridges across borders </p>
               </div>
             </motion.div>
           </div>
@@ -381,7 +381,7 @@ export default function CareersPage() {
             className="text-center mt-12"
           >
             <p className="text-white/70 mb-6">
-              Don't see a position that matches your skills? We're always looking for talented individuals to join our
+              Don it see a position that matches your skills? We are always looking for talented individuals to join our
               team.
             </p>
             <Link href="/contact">
@@ -413,7 +413,7 @@ export default function CareersPage() {
                   </span>
                 </h2>
                 <p className="text-white/70 max-w-2xl mx-auto">
-                  We've designed a straightforward hiring process to help us get to know you better while respecting
+                  We ve designed a straightforward hiring process to help us get to know you better while respecting
                   your time.
                 </p>
               </motion.div>
@@ -468,7 +468,7 @@ export default function CareersPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-white/90">Team Interviews</h3>
                       <p className="text-white/70">
-                        Meet with potential teammates and cross-functional partners to explore how you'll work together.
+                        Meet with potential teammates and cross-functional partners to explore how you all work together.
                       </p>
                     </div>
                   </li>

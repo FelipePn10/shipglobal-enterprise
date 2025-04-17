@@ -7,7 +7,7 @@ export default function CookieErrorPage() {
         </p>
         <ol className="list-decimal list-inside mb-4">
           <li className="mb-2">Abra as configurações do seu navegador</li>
-          <li className="mb-2">Procure por 'Configurações de cookies'</li>
+          <li className="mb-2">Procure por Configurações de cookies</li>
           <li className="mb-2">Permita cookies de terceiros</li>
           <li className="mb-2">Recarregue a página</li>
         </ol>
