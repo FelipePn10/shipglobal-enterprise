@@ -2,8 +2,9 @@ import clientPromise from '@/lib/mongo';
 import { ObjectId, WithId, Filter } from 'mongodb';
 
 // Define transaction types and statuses
-type TransactionType = 'credit' | 'debit';
+type TransactionType = 'credit' | 'debit' | 'refund' | 'withdrawal'; 
 type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
+
 
 // Define the base Transaction interface
 interface Transaction {
@@ -11,9 +12,28 @@ interface Transaction {
   userId: number;
   type: TransactionType;
   status: TransactionStatus;
-  amount?: number;
+  amount: number;
+  currency?: string;
   description?: string;
+  paymentIntentId?: string;
+  refundId?: string;
+  payoutId?: string;
+  metadata?: {
+    mysqlTransactionId?: number;
+    originalPaymentIntentId?: string;
+    mysqlUserId?: number;
+    userEmail?: string;
+    userName?: string;
+    targetAccount?: {
+      bankCode?: string;
+      accountNumber?: string;
+      accountType?: string;
+    };
+    ipAddress?: string;
+    userAgent?: string;
+  };
 }
+
 
 // Define the extended Transaction with timestamps
 interface ExtendedTransaction extends Transaction {
@@ -27,6 +47,7 @@ interface ExtendedTransaction extends Transaction {
 export default class Transactions {
   private static readonly COLLECTION_NAME = 'transactions';
 
+ 
   /**
    * Creates a new transaction in the database
    * @param transaction - Transaction data without _id
@@ -35,11 +56,11 @@ export default class Transactions {
    */
   static async create(transaction: Omit<Transaction, '_id'>): Promise<WithId<Transaction>> {
     // Validate input
-    if (!transaction.userId || !transaction.type || !transaction.status) {
-      throw new Error('userId, type, and status are required');
+    if (!transaction.userId || !transaction.type || !transaction.status || transaction.amount === undefined) {
+      throw new Error('userId, type, status, and amount are required');
     }
 
-    if (!['credit', 'debit'].includes(transaction.type)) {
+    if (!['credit', 'debit', 'refund', 'withdrawal'].includes(transaction.type)) {
       throw new Error('Invalid transaction type');
     }
 

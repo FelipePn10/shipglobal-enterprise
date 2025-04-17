@@ -1,16 +1,21 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { Suspense, useEffect, useState } from 'react';
 
-export default function LoginPage() {
+const LoginContent = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const [callbackUrl, setCallbackUrl] = useState('/dashboard');
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const url = searchParams.get('callbackUrl') || '/dashboard';
+    setCallbackUrl(url);
+  }, []);
 
   const handleDevLogin = async () => {
-    // This will work with our modified auth.ts
     const result = await signIn('credentials', {
       redirect: false,
       email: 'dev@example.com',
@@ -31,5 +36,13 @@ export default function LoginPage() {
         This is a development-only login bypass
       </p>
     </div>
+  );
+};
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

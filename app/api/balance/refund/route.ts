@@ -57,10 +57,15 @@ export async function POST(req: Request) {
 
       let updatedBalance: { amount: string; lastUpdated: Date };
       if (existingBalance.length > 0) {
+        const newAmount = (Number(existingBalance[0].amount) - amount).toFixed(2);
+        if (Number(newAmount) < 0) {
+          throw new Error("Insufficient balance for refund");
+        }
+
         await tx
           .update(balances)
           .set({
-            amount: (Number(existingBalance[0].amount) - amount).toFixed(2),
+            amount: newAmount,
             lastUpdated: new Date(),
           })
           .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
@@ -133,13 +138,13 @@ export async function POST(req: Request) {
     return NextResponse.json({
       balance: {
         amount: parseFloat(mysqlResults.updatedBalance.amount),
-        currency: currency,
+        currency,
         lastUpdated: mysqlResults.updatedBalance.lastUpdated.toISOString(),
       },
       transaction: {
         id: `tx-${mysqlResults.newTransaction.id}`,
         mongoId: mongoTransaction._id.toString(),
-        type: mysqlResults.newTransaction.type,
+        type: "refund",
         amount: parseFloat(mysqlResults.newTransaction.amount),
         currency: mysqlResults.newTransaction.currency as CurrencyCode,
         date: mysqlResults.newTransaction.date.toISOString(),

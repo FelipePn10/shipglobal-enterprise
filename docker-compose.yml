@@ -65,7 +65,8 @@ services:
 
 volumes:
   hero-mysql-data:
-  hero-mongo-data:
+  hero-mongodb-data: 
+
 
 networks:
   hero-network:

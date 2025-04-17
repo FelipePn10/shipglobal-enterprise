@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     }
 
     // Get user info from MySQL
-    const user = await db
+    const [user] = await db
       .select({
         id: users.id,
         email: users.email,
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       .where(eq(users.id, userId))
       .limit(1);
 
-    if (!user.length) {
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -65,13 +65,13 @@ export async function POST(req: Request) {
     // Process in transaction
     const mysqlResults = await db.transaction(async (tx) => {
       // Check balance
-      const existingBalance = await tx
+      const [existingBalance] = await tx
         .select({ amount: balances.amount })
         .from(balances)
         .where(and(eq(balances.userId, userId), eq(balances.currency, currency)))
         .limit(1);
 
-      if (!existingBalance.length || parseFloat(existingBalance[0].amount) < amount) {
+      if (!existingBalance || parseFloat(existingBalance.amount) < amount) {
         throw new Error("Insufficient balance");
       }
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       await tx
         .update(balances)
         .set({
-          amount: (parseFloat(existingBalance[0].amount) - amount).toFixed(2),
+          amount: (parseFloat(existingBalance.amount) - amount).toFixed(2),
           lastUpdated: new Date(),
         })
         .where(and(eq(balances.userId, userId), eq(balances.currency, currency)));
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       }
 
       // Create transaction in MySQL
-      const transactionIdArray = await tx
+      const [transactionId] = await tx
         .insert(transactions)
         .values({
           userId,
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
       const [newTransaction] = await tx
         .select()
         .from(transactions)
-        .where(eq(transactions.id, transactionIdArray[0].id));
+        .where(eq(transactions.id, transactionId.id));
 
       return { updatedBalance, newTransaction };
     });
@@ -128,8 +128,8 @@ export async function POST(req: Request) {
       metadata: {
         mysqlTransactionId: mysqlResults.newTransaction.id,
         mysqlUserId: userId,
-        userEmail: user[0].email,
-        userName: `${user[0].firstName} ${user[0].lastName}`,
+        userEmail: user.email,
+        userName: `${user.firstName} ${user.lastName}`,
         targetAccount,
         ipAddress: req.headers.get('x-forwarded-for') || '',
         userAgent: req.headers.get('user-agent') || ''
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
       transaction: {
         id: `tx-${mysqlResults.newTransaction.id}`,
         mongoId: mongoTransaction._id.toString(),
-        type: mysqlResults.newTransaction.type,
+        type: "withdrawal",
         amount: parseFloat(mysqlResults.newTransaction.amount),
         currency: mysqlResults.newTransaction.currency as CurrencyCode,
         date: mysqlResults.newTransaction.date.toISOString(),
