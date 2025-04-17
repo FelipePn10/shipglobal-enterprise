@@ -3,14 +3,22 @@ import { db } from "@/lib/db";
 import { balances, transactions } from "@/lib/schema";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { getExchangeRates } from "@/lib/exchange-rates";
-import { WithId } from "mongodb";
-import { TransactionCollection } from "@/lib/mongo/collections/transactions";
-import { CurrencyCode, TransactionType, TransactionStatus } from "@/lib/mongoModels";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { TransactionCollection } from "@/lib/mongo/collections/transactions";
 
-// Unified transaction type
+// Unified enums with const assertion for type safety
+const TransactionTypes = ["deposit", "withdrawal", "purchase", "transfer", "refund"] as const;
+export type TransactionType = typeof TransactionTypes[number];
+
+const CurrencyCodes = ["USD", "EUR", "CNY", "JPY", "BRL"] as const;
+export type CurrencyCode = typeof CurrencyCodes[number];
+
+const TransactionStatuses = ["pending", "completed", "failed", "cancelled"] as const;
+export type TransactionStatus = typeof TransactionStatuses[number];
+
+// Interfaces
 interface UnifiedTransaction {
   source: "mysql" | "mongo";
   id: string;
@@ -24,12 +32,12 @@ interface UnifiedTransaction {
   targetCurrency?: CurrencyCode;
 }
 
-interface BalanceData {
-  [currency: string]: {
+type BalanceData = {
+  [K in CurrencyCode]: {
     amount: number;
     lastUpdated: string;
   };
-}
+};
 
 interface HistoricalBalanceData {
   date: string;
@@ -58,16 +66,13 @@ interface MongoTransactionDocument {
   updatedAt: Date;
 }
 
-type MongoTransactionWithId = WithId<MongoTransactionDocument>;
-
-// Strongly typed MongoDB transaction type guard
-function isMongoTransaction(tx: unknown): tx is MongoTransactionWithId {
+// Type guard for MongoDB transactions
+function isMongoTransaction(tx: unknown): tx is MongoTransactionDocument {
   if (!tx || typeof tx !== "object") return false;
 
   const transaction = tx as Record<string, unknown>;
 
   try {
-    // Check required properties
     if (
       !(transaction._id instanceof ObjectId) ||
       typeof transaction.userId !== "number" ||
@@ -83,21 +88,15 @@ function isMongoTransaction(tx: unknown): tx is MongoTransactionWithId {
       return false;
     }
 
-    // Validate TransactionType enum
-    const validTypes: TransactionType[] = [
-      "deposit",
-      "withdrawal",
-      "purchase",
-      "transfer",
-      "refund",
-    ];
-    if (!validTypes.includes(transaction.type as TransactionType)) {
+    if (!TransactionTypes.includes(transaction.type as TransactionType)) {
       return false;
     }
 
-    // Validate CurrencyCode enum
-    const validCurrencies: CurrencyCode[] = ["USD", "EUR", "CNY", "JPY", "BRL"];
-    if (!validCurrencies.includes(transaction.currency as CurrencyCode)) {
+    if (!CurrencyCodes.includes(transaction.currency as CurrencyCode)) {
+      return false;
+    }
+
+    if (!TransactionStatuses.includes(transaction.status as TransactionStatus)) {
       return false;
     }
 
@@ -114,7 +113,7 @@ function isMongoTransaction(tx: unknown): tx is MongoTransactionWithId {
  * @param req - The incoming request with userId query parameter
  * @returns JSON response with balances, exchange rates, transactions, and historical data
  */
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
     // Authenticate user
     const session = await getServerSession(authOptions);
@@ -123,7 +122,8 @@ export async function GET(req: Request) {
     }
 
     const url = new URL(req.url);
-    const userId = parseInt(url.searchParams.get("userId") || "0");
+    const userIdParam = url.searchParams.get("userId");
+    const userId = userIdParam ? parseInt(userIdParam, 10) : NaN;
 
     if (isNaN(userId) || userId <= 0) {
       return NextResponse.json(
@@ -133,7 +133,7 @@ export async function GET(req: Request) {
     }
 
     // Verify user ID matches session
-    const sessionUserId = parseInt(session.user.id);
+    const sessionUserId = parseInt(session.user.id, 10);
     if (userId !== sessionUserId) {
       return NextResponse.json(
         { error: "Unauthorized: userId does not match session" },
@@ -151,27 +151,27 @@ export async function GET(req: Request) {
       .from(balances)
       .where(eq(balances.userId, userId));
 
-    const balancesData: BalanceData = {};
-    const supportedCurrencies: CurrencyCode[] = ["USD", "EUR", "CNY", "JPY"];
-
-    supportedCurrencies.forEach((currency) => {
-      balancesData[currency] = {
-        amount: 0,
-        lastUpdated: new Date().toISOString(),
-      };
-    });
+    const balancesData: BalanceData = Object.fromEntries(
+      CurrencyCodes.map((currency) => [
+        currency,
+        {
+          amount: 0,
+          lastUpdated: new Date().toISOString(),
+        },
+      ])
+    ) as BalanceData;
 
     balanceRecords.forEach((record) => {
-      if (supportedCurrencies.includes(record.currency as CurrencyCode)) {
-        balancesData[record.currency] = {
-          amount: parseFloat(record.amount),
+      if (CurrencyCodes.includes(record.currency as CurrencyCode)) {
+        balancesData[record.currency as CurrencyCode] = {
+          amount: parseFloat(record.amount.toString()),
           lastUpdated: record.lastUpdated.toISOString(),
         };
       }
     });
 
     // Query transactions
-    const [mysqlTransactions, mongoTransactionsRaw] = await Promise.all([
+    const [mysqlTransactions, mongoTxRecordsRaw] = await Promise.all([
       db
         .select({
           id: transactions.id,
@@ -189,58 +189,52 @@ export async function GET(req: Request) {
         .orderBy(desc(transactions.date))
         .limit(50),
 
-      TransactionCollection.findByUserId(userId, {}, { limit: 50 })
-        .catch((error) => {
+      TransactionCollection.findByUserId(userId, {}, { limit: 50 }).catch(
+        (error) => {
           console.error("MongoDB transaction query error:", error);
           return [];
-        }),
+        }
+      ) as Promise<MongoTransactionDocument[]>,
     ]);
 
-    // Process MongoDB transactions with proper type checking
-    const mongoTransactions = mongoTransactionsRaw
-      .filter((tx): tx is MongoTransactionWithId => isMongoTransaction(tx))
-      .map((tx) => ({
-        _id: tx._id,
-        userId: tx.userId,
+    // Process MongoDB transactions
+    const mongoTransactions = mongoTxRecordsRaw
+      .filter(isMongoTransaction)
+      .map((tx: MongoTransactionDocument) => ({
+        source: "mongo" as const,
+        id: tx._id.toString(),
         type: tx.type,
         amount: tx.amount,
         currency: tx.currency,
+        date: tx.createdAt.toISOString(),
         status: tx.status,
         description: tx.description,
-        metadata: tx.metadata || {},
-        createdAt: new Date(tx.createdAt),
-        updatedAt: new Date(tx.updatedAt),
+        paymentIntentId: tx.metadata.paymentIntentId,
       }));
 
     // Process MySQL transactions
-    const mysqlTxProcessed: UnifiedTransaction[] = mysqlTransactions.map((tx) => ({
-      source: "mysql",
-      id: `tx-${tx.id}`,
-      type: tx.type as TransactionType,
-      amount: parseFloat(tx.amount),
-      currency: tx.currency as CurrencyCode,
-      date: tx.date.toISOString(),
-      status: tx.status as TransactionStatus,
-      description: tx.description || undefined,
-      paymentIntentId: tx.paymentIntentId || undefined,
-      targetCurrency: tx.targetCurrency as CurrencyCode | undefined,
-    }));
+    const mysqlTransactionsProcessed: UnifiedTransaction[] = mysqlTransactions
+      .filter(
+        (tx) =>
+          TransactionTypes.includes(tx.type as TransactionType) &&
+          CurrencyCodes.includes(tx.currency as CurrencyCode) &&
+          TransactionStatuses.includes(tx.status as TransactionStatus)
+      )
+      .map((tx) => ({
+        source: "mysql" as const,
+        id: `tx-${tx.id}`,
+        type: tx.type as TransactionType,
+        amount: parseFloat(tx.amount.toString()),
+        currency: tx.currency as CurrencyCode,
+        date: tx.date.toISOString(),
+        status: tx.status as TransactionStatus,
+        description: tx.description ?? undefined,
+        paymentIntentId: tx.paymentIntentId ?? undefined,
+        targetCurrency: tx.targetCurrency as CurrencyCode | undefined,
+      }));
 
-    // Process MongoDB transactions
-    const mongoTxProcessed: UnifiedTransaction[] = mongoTransactions.map((tx) => ({
-      source: "mongo",
-      id: tx._id.toString(),
-      type: tx.type,
-      amount: tx.amount,
-      currency: tx.currency,
-      date: tx.createdAt.toISOString(),
-      status: tx.status,
-      description: tx.description,
-      paymentIntentId: tx.metadata.paymentIntentId,
-    }));
-
-    // Combine transactions
-    const combinedTransactions = [...mysqlTxProcessed, ...mongoTxProcessed]
+    // Combine and sort transactions
+    const combinedTransactions = [...mysqlTransactionsProcessed, ...mongoTransactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 100);
 
@@ -259,7 +253,7 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     console.error("Balance Fetch Error:", {
       error,
-      userId: parseInt(new URL(req.url).searchParams.get("userId") || "0") || 0,
+      userId: parseInt(new URL(req.url).searchParams.get("userId") ?? "0", 10) || 0,
     });
     const errorMessage =
       error instanceof Error ? error.message : "Failed to fetch balance";
@@ -300,23 +294,19 @@ async function generateHistoricalBalanceData(
     }).catch((error) => {
       console.error("MongoDB historical transaction query error:", error);
       return [];
-    }),
+    }) as Promise<MongoTransactionDocument[]>,
   ]);
 
-  // Process MongoDB transactions with proper type checking
+  // Process MongoDB transactions
   const mongoTxRecords = mongoTxRecordsRaw
-    .filter((tx): tx is MongoTransactionWithId => isMongoTransaction(tx))
-    .map((tx) => ({
-      _id: tx._id,
-      userId: tx.userId,
+    .filter((tx: MongoTransactionDocument) => isMongoTransaction(tx))
+    .map((tx: MongoTransactionDocument) => ({
+      source: "mongo" as const,
+      date: tx.createdAt,
       type: tx.type,
       amount: tx.amount,
       currency: tx.currency,
-      status: tx.status,
-      description: tx.description,
-      metadata: tx.metadata || {},
-      createdAt: new Date(tx.createdAt),
-      updatedAt: new Date(tx.updatedAt),
+      targetCurrency: tx.metadata?.relatedEntities?.importId as CurrencyCode | undefined,
     }));
 
   // Get current balances
@@ -328,18 +318,15 @@ async function generateHistoricalBalanceData(
     .from(balances)
     .where(eq(balances.userId, userId));
 
-  const balancesMap: Record<CurrencyCode, number> = {
-    USD: 0,
-    EUR: 0,
-    CNY: 0,
-    JPY: 0,
-    BRL: 0,
-  };
+  const balancesMap: Record<CurrencyCode, number> = Object.fromEntries(
+    CurrencyCodes.map((currency) => [currency, 0])
+  ) as Record<CurrencyCode, number>;
 
   currentBalances.forEach((balance) => {
-    const currency = balance.currency as CurrencyCode;
-    if (currency in balancesMap) {
-      balancesMap[currency] = parseFloat(balance.amount);
+    if (CurrencyCodes.includes(balance.currency as CurrencyCode)) {
+      balancesMap[balance.currency as CurrencyCode] = parseFloat(
+        balance.amount.toString()
+      );
     }
   });
 
@@ -355,24 +342,20 @@ async function generateHistoricalBalanceData(
 
     // Process transactions
     const allTransactions = [
-      ...mysqlTxRecords.map((tx) => ({
-        source: "mysql" as const,
-        date: tx.date,
-        type: tx.type as TransactionType,
-        amount: parseFloat(tx.amount),
-        currency: tx.currency as CurrencyCode,
-        targetCurrency: tx.targetCurrency as CurrencyCode | undefined,
-      })),
-      ...mongoTxRecords.map((tx) => ({
-        source: "mongo" as const,
-        date: tx.createdAt,
-        type: tx.type,
-        amount: tx.amount,
-        currency: tx.currency,
-        targetCurrency: tx.metadata?.relatedEntities?.importId as
-          | CurrencyCode
-          | undefined,
-      })),
+      ...mysqlTxRecords
+        .filter((tx: typeof mysqlTxRecords[number]) =>
+          TransactionTypes.includes(tx.type as TransactionType) &&
+          CurrencyCodes.includes(tx.currency as CurrencyCode)
+        )
+        .map((tx: typeof mysqlTxRecords[number]) => ({
+          source: "mysql" as const,
+          date: tx.date,
+          type: tx.type as TransactionType,
+          amount: parseFloat(tx.amount.toString()),
+          currency: tx.currency as CurrencyCode,
+          targetCurrency: tx.targetCurrency as CurrencyCode | undefined,
+        })),
+      ...mongoTxRecords,
     ];
 
     for (const tx of allTransactions) {
@@ -425,12 +408,15 @@ function updateBalanceSnapshot(
       snapshot[currency] += amount;
       break;
     case "transfer":
-      if (targetCurrency) {
+      if (targetCurrency && CurrencyCodes.includes(targetCurrency)) {
         snapshot[currency] += amount;
         snapshot[targetCurrency] -= amount;
       }
       break;
     case "refund":
+      snapshot[currency] += amount;
+      break;
+    case "purchase":
       snapshot[currency] += amount;
       break;
   }
