@@ -1,19 +1,20 @@
-FROM node:22.14.0
-
+FROM node:22.14.0 AS builder
 WORKDIR /app
-
 RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN npm config set registry https://registry.npmjs.org
-
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-
 COPY . .
+RUN pnpm drizzle-kit generate:mysql
+RUN pnpm build
 
-# Adicionei o comando de migração
-RUN echo "⏳ Rodando migrações..." && pnpm drizzle-kit generate:mysql
-RUN echo "🔨 Buildando aplicação..." && pnpm build
-
+FROM node:22.14.0 AS runner
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+ENV NODE_ENV production
 EXPOSE 3000
-
 CMD ["pnpm", "start"]

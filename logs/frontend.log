@@ -1,37 +1,20 @@
-frontend-1  | 
-frontend-1  | > Redirex-Enterprise@0.1.0 start /app
-frontend-1  | > next start
-frontend-1  | 
-frontend-1  |    ▲ Next.js 15.2.4
-frontend-1  |    - Local:        http://localhost:3000
-frontend-1  |    - Network:      http://172.19.0.3:3000
-frontend-1  | 
-frontend-1  |  ✓ Starting...
-frontend-1  |  ✓ Ready in 505ms
-frontend-1  | Erro ao conectar ao banco de dados: Error: Access denied for user 'root'@'172.19.0.3' (using password: NO)
-frontend-1  |     at I.asError (.next/server/chunks/830.js:7:145696)
-frontend-1  |     at r.execute (.next/server/chunks/830.js:7:124154)
-frontend-1  |     at A.handlePacket (.next/server/chunks/830.js:7:131852)
-frontend-1  |     at A.onPacket (.next/server/chunks/830.js:7:126312)
-frontend-1  |     at A.executeStart (.next/server/chunks/830.js:7:86824)
-frontend-1  |     at Socket.<anonymous> (.next/server/chunks/830.js:7:126458) {
-frontend-1  |   code: 'ER_ACCESS_DENIED_ERROR',
-frontend-1  |   errno: 1045,
-frontend-1  |   sqlState: '28000',
-frontend-1  |   sqlMessage: "Access denied for user 'root'@'172.19.0.3' (using password: NO)",
-frontend-1  |   sql: undefined
-frontend-1  | }
-frontend-1  | Erro ao conectar ao banco de dados: Error: The edge runtime does not support Node.js 'net' module.
-frontend-1  | Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime
-frontend-1  |     at Object.apply (.next/server/middleware.js:8:594)
-frontend-1  |     at new h (.next/server/middleware.js:1:4765)
-frontend-1  |     at new E (.next/server/middleware.js:1:217541)
-frontend-1  |     at new E (.next/server/middleware.js:1:16863)
-frontend-1  |     at E.getConnection (.next/server/middleware.js:1:212282)
-frontend-1  |     at <unknown> (.next/server/middleware.js:1:323769)
-frontend-1  |     at new Promise (<anonymous>)
-frontend-1  |     at a.getConnection (.next/server/middleware.js:1:323742)
-frontend-1  |     at <unknown> (.next/server/middleware.js:25:37866)
-frontend-1  |     at 8309 (.next/server/middleware.js:25:38033) {
-frontend-1  |   
-frontend-1  | }
+hero-frontend  | 
+hero-frontend  | > Redirex-Enterprise@0.1.0 start /app
+hero-frontend  | > next start
+hero-frontend  | 
+hero-frontend  |    ▲ Next.js 15.2.4
+hero-frontend  |    - Local:        http://localhost:3000
+hero-frontend  |    - Network:      http://172.18.0.5:3000
+hero-frontend  | 
+hero-frontend  |  ✓ Starting...
+hero-frontend  |  ✓ Ready in 1315ms
+hero-frontend  | MongoDB connection error: MongoServerSelectionError: Server selection timed out after 5000 ms
+hero-frontend  |     at async e (.next/server/app/api/balance/deposit/route.js:1:2985) {
+hero-frontend  |   errorLabelSet: Set(0) {},
+hero-frontend  |   reason: [TopologyDescription],
+hero-frontend  |   code: undefined
+hero-frontend  | }
+hero-frontend  | Error: Failed to connect to MongoDB
+hero-frontend  |     at e (.next/server/app/api/balance/deposit/route.js:1:3063)
+hero-frontend  |  ⨯ unhandledRejection:  Error: Failed to connect to MongoDB
+hero-frontend  |     at e (.next/server/app/api/balance/deposit/route.js:1:3063)

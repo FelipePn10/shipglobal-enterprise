@@ -12,17 +12,17 @@ services:
       - hero-mongodb-data:/data/db
       - ./mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
-      - hero-network
+      - shared-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 5
-    command: [
-      '--wiredTigerCacheSizeGB=1.5',
-      '--oplogSize=128',
-      '--bind_ip_all'
-    ]
+    command:
+      - '--wiredTigerCacheSizeGB=1.5'
+      - '--oplogSize=128'
+      - '--bind_ip_all'
+
   mysql:
     image: mysql:8.0
     container_name: hero-mysql
@@ -34,11 +34,11 @@ services:
       - "3310:3306"
     volumes:
       - hero-mysql-data:/var/lib/mysql
-      - ./mysql/timezone:/etc/mysql/conf.d
     networks:
-      - hero-network
+      - shared-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -46,28 +46,35 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    container_name: hero-frontend
     ports:
       - "3000:3000"
     environment:
+      NEXT_PUBLIC_API_URL: http://chatapp-backend:8081
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_USER: root
+      MONGO_PASSWORD: admin
+      MONGO_DB: hero_transactions
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: admin
       DB_NAME: companydb
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mongodb
+      - mysql
     networks:
-      - hero-network
+      - shared-network
     volumes:
       - .:/app:delegated
       - /app/node_modules
 
 volumes:
   hero-mysql-data:
-  hero-mongodb-data: 
-
+  hero-mongodb-data:
 
 networks:
-  hero-network:
-    driver: bridge
+  shared-network:
+    name: shared-network
+    external: true
