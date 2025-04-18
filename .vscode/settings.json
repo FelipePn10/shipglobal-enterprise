@@ -56,5 +56,10 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "DockerRun.DisableDockerrc": true
+  "DockerRun.DisableDockerrc": true,
+  "DockerRun.Containers": [
+    "b2677da9a3ef",
+    "ce5c1a5db755",
+    "6d55a0ada9cb"
+  ]
 }

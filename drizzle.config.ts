@@ -5,11 +5,11 @@ export default defineConfig({
   out: "./drizzle/migrations",
   dialect: "mysql",
   dbCredentials: {
-    host: process.env.DB_HOST || "127.0.0.1",
+    host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3310,
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "admin",
-    database: process.env.DB_NAME || "companydb",
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'admin',
+    database: process.env.DB_NAME || 'companydb',
   },
   verbose: true,
 });

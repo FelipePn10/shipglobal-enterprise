@@ -25,7 +25,7 @@ export const companies = mysqlTable("companies", {
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").references(() => companies.id).notNull(),
+  companyId: int("company_id").references(() => companies.id), // Removido notNull
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -101,9 +101,10 @@ export const exchangeRates = mysqlTable("exchange_rates", {
   updatedAt: datetime("updated_at", { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-// Relations remain the same
+// Relations
 export const companyRelations = relations(companies, ({ many }) => ({
   users: many(users),
+  imports: many(imports),
 }));
 
 export const userRelations = relations(users, ({ one, many }) => ({

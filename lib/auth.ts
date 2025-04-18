@@ -19,8 +19,7 @@ declare module "next-auth" {
     user: CustomUser;
   }
   interface User extends CustomUser {
-    // Add at least one property to make the extension meaningful
-    _type: "next-auth-user"; // example property
+    _type: "next-auth-user";
   }
 }
 
@@ -50,6 +49,24 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // Login para desenvolvedores no ambiente de desenvolvimento
+          if (
+            process.env.NODE_ENV === 'development' &&
+            credentials.email === 'dev@example.com' &&
+            credentials.password === 'devbypass'
+          ) {
+            return {
+              id: 'dev-user-123',
+              name: 'Developer User',
+              email: 'dev@example.com',
+              type: 'user',
+              companyId: undefined,
+              stripeAccountId: null,
+              _type: 'next-auth-user',
+            };
+          }
+
+          // Autenticação para usuários
           const userResult = await db
             .select({
               id: users.id,
@@ -64,6 +81,7 @@ export const authOptions: NextAuthOptions = {
             .where(eq(users.email, credentials.email))
             .limit(1);
 
+          // Autenticação para empresas
           const companyResult =
             userResult.length === 0
               ? await db
@@ -93,7 +111,7 @@ export const authOptions: NextAuthOptions = {
             type: userResult[0] ? "user" : "company",
             companyId: userResult[0]?.companyId?.toString() || companyResult[0]?.id?.toString(),
             stripeAccountId: userResult[0]?.stripeAccountId,
-            _type: "next-auth-user", // Add the required _type property
+            _type: "next-auth-user",
           };
         } catch (error) {
           console.error("Authentication error:", error);
