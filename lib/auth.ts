@@ -2,7 +2,7 @@ import { User, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
-import { companies, users } from "./schema";
+import { companies, users, companyMembers } from "./schema";
 import { eq } from "drizzle-orm";
 
 export interface CustomUser {
@@ -10,7 +10,7 @@ export interface CustomUser {
   name?: string | null;
   email?: string | null;
   type: "user" | "company";
-  companyId?: string;
+  companyId?: string | null; // Pode ser null para usuários sem empresa
   stripeAccountId?: string | null;
 }
 
@@ -27,7 +27,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     type: "user" | "company";
-    companyId?: string;
+    companyId?: string | null;
     email?: string | null;
     name?: string | null;
     stripeAccountId?: string | null;
@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
               name: 'Developer User',
               email: 'dev@example.com',
               type: 'user',
-              companyId: undefined,
+              companyId: null,
               stripeAccountId: null,
               _type: 'next-auth-user',
             };
@@ -75,11 +75,22 @@ export const authOptions: NextAuthOptions = {
               email: users.email,
               password: users.password,
               stripeAccountId: users.stripeAccountId,
-              companyId: users.companyId,
             })
             .from(users)
             .where(eq(users.email, credentials.email))
             .limit(1);
+
+          // Busca a empresa associada ao usuário (se existir)
+          let userCompanyId: string | null = null;
+          if (userResult.length > 0) {
+            const companyResult = await db
+              .select({ companyId: companyMembers.companyId })
+              .from(companyMembers)
+              .where(eq(companyMembers.userId, userResult[0].id))
+              .limit(1);
+
+            userCompanyId = companyResult[0]?.companyId?.toString() || null;
+          }
 
           // Autenticação para empresas
           const companyResult =
@@ -109,7 +120,7 @@ export const authOptions: NextAuthOptions = {
               : companyResult[0]?.name,
             email: credentials.email,
             type: userResult[0] ? "user" : "company",
-            companyId: userResult[0]?.companyId?.toString() || companyResult[0]?.id?.toString(),
+            companyId: userResult[0] ? userCompanyId : companyResult[0]?.id?.toString(),
             stripeAccountId: userResult[0]?.stripeAccountId,
             _type: "next-auth-user",
           };

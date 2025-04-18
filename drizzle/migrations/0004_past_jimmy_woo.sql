@@ -1,1 +1,0 @@
-ALTER TABLE `imports` MODIFY COLUMN `company_id` int;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "../../../../lib/db";
-import { companies } from "../../../../lib/schema";
+import { db } from "../../../../../lib/db";
+import { companies } from "../../../../../lib/schema";
 
 export async function POST(req: NextRequest) {
   const data = await req.json();

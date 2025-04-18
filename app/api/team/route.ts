@@ -1,47 +1,39 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { users, companyMembers } from "@/lib/schema";
 import { eq } from "drizzle-orm";
-
-export async function GET() {
-  const teamMembers = await db.select().from(users);
-  return NextResponse.json(teamMembers);
-}
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   const data = await request.json();
   const { firstName, lastName, email, role, companyId } = data;
 
-  await db.insert(users).values({
-    firstName,
-    lastName,
-    email,
-    role,
-    companyId,
-    password: "default_password", // In a real app, hash this
-  });
+  try {
+    // 1. Primeiro cria o usuário (SEM companyId)
+    const hashedPassword = await bcrypt.hash("default_password", 10);
+    const [newUser] = await db.insert(users).values({
+      firstName,
+      lastName,
+      email,
+      role,
+      password: hashedPassword,
+    }).$returningId();
 
-  const newMember = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+    // 2. Se foi fornecido companyId, cria a associação em company_members
+    if (companyId) {
+      await db.insert(companyMembers).values({
+        userId: newUser.id,
+        companyId,
+        role: "member", // Ou role adequado
+      });
+    }
 
-  return NextResponse.json(newMember[0]);
-}
-
-export async function PUT(request: Request) {
-  const data = await request.json();
-  const { id, ...updates } = data;
-
-  await db.update(users).set(updates).where(eq(users.id, id));
-
-  // Fetch the updated member
-  const updatedMember = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
-
-  return NextResponse.json(updatedMember[0]);
+    return NextResponse.json(newUser);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { error: "Failed to create user" },
+      { status: 500 }
+    );
+  }
 }

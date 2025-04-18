@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   Eye,
   EyeOff,
@@ -22,15 +22,15 @@ import {
   Package,
   Home,
   BadgeCheck,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import ElegantShape from "@/components/kokonutui/elegant-shape";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import ElegantShape from '@/components/kokonutui/elegant-shape';
 
-// Types
+// Tipos
 interface FormData {
   firstName: string;
   lastName: string;
@@ -54,34 +54,34 @@ interface FormErrors {
   [key: string]: string;
 }
 
-// Plans
+// Planos
 const plans = [
   {
-    id: "basic",
-    name: "Plano Básico",
-    description: "Redirecionamento padrão sem taxas mensais.",
-    price: "Grátis",
+    id: 'basic',
+    name: 'Plano Básico',
+    description: 'Redirecionamento padrão sem taxas mensais.',
+    price: 'Grátis',
     icon: Package,
   },
   {
-    id: "premium",
-    name: "Plano Premium",
-    description: "Consolidação de pacotes, fotos dos itens e rastreamento prioritário.",
-    price: "R$ 29,90 / mês",
+    id: 'premium',
+    name: 'Plano Premium',
+    description: 'Consolidação de pacotes, fotos dos itens e rastreamento prioritário.',
+    price: 'R$ 29,90 / mês',
     icon: CreditCard,
     isPopular: true,
   },
   {
-    id: "exclusive",
-    name: "Plano Exclusivo",
+    id: 'exclusive',
+    name: 'Plano Exclusivo',
     description:
-      "Todos os benefícios do Premium + endereço exclusivo nos EUA e suporte prioritário.",
-    price: "R$ 79,90 / mês",
+      'Todos os benefícios do Premium + endereço exclusivo nos EUA e suporte prioritário.',
+    price: 'R$ 79,90 / mês',
     icon: Home,
   },
 ];
 
-// Animation Variants
+// Variantes de animação
 const fadeInVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
@@ -111,48 +111,48 @@ const slideVariants = {
 export default function RegisterUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Personal info, 2: Address & contact, 3: Plan selection
+  const [step, setStep] = useState(1); // 1: Informações pessoais, 2: Endereço e contato, 3: Seleção de plano
   const [showPassword, setShowPassword] = useState(false);
   const [formProgress, setFormProgress] = useState(0);
   const [formData, setFormData] = useState<FormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    birthDate: "",
-    cpf: "",
-    password: "",
-    country: "Brasil",
-    state: "",
-    city: "",
-    street: "",
-    number: "",
-    complement: "",
-    zipCode: "",
-    phone: "",
+    firstName: '',
+    lastName: '',
+    email: '',
+    birthDate: '',
+    cpf: '',
+    password: '',
+    country: 'Brasil',
+    state: '',
+    city: '',
+    street: '',
+    number: '',
+    complement: '',
+    zipCode: '',
+    phone: '',
     agreeTerms: false,
-    selectedPlan: "",
+    selectedPlan: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Calculate form progress
+  // Calcula o progresso do formulário
   useEffect(() => {
     const requiredFields: (keyof FormData)[] = [
-      "firstName",
-      "lastName",
-      "email",
-      "birthDate",
-      "cpf",
-      "password",
-      "country",
-      "state",
-      "city",
-      "street",
-      "number",
-      "zipCode",
-      "phone",
+      'firstName',
+      'lastName',
+      'email',
+      'birthDate',
+      'cpf',
+      'password',
+      'country',
+      'state',
+      'city',
+      'street',
+      'number',
+      'zipCode',
+      'phone',
     ];
     const filledFields = requiredFields.filter(
-      (field) => formData[field] !== ""
+      (field) => formData[field] !== ''
     ).length;
     const termsProgress = formData.agreeTerms ? 1 : 0;
     setFormProgress(
@@ -165,7 +165,7 @@ export default function RegisterUserPage() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
-      setErrors((prev) => (prev[name] ? { ...prev, [name]: "" } : prev));
+      setErrors((prev) => (prev[name] ? { ...prev, [name]: '' } : prev));
     },
     []
   );
@@ -173,23 +173,23 @@ export default function RegisterUserPage() {
   const handleCheckboxChange = useCallback(
     (name: keyof FormData, checked: boolean) => {
       setFormData((prev) => ({ ...prev, [name]: checked }));
-      setErrors((prev) => (prev[name] ? { ...prev, [name]: "" } : prev));
+      setErrors((prev) => (prev[name] ? { ...prev, [name]: '' } : prev));
     },
     []
   );
 
   const validateStep1 = useCallback(() => {
     const newErrors: FormErrors = {};
-    if (!formData.firstName) newErrors.firstName = "Nome é obrigatório";
-    if (!formData.lastName) newErrors.lastName = "Sobrenome é obrigatório";
+    if (!formData.firstName) newErrors.firstName = 'Nome é obrigatório';
+    if (!formData.lastName) newErrors.lastName = 'Sobrenome é obrigatório';
     if (!formData.cpf || !/^\d{11}$/.test(formData.cpf))
-      newErrors.cpf = "CPF inválido (11 dígitos)";
+      newErrors.cpf = 'CPF inválido (11 dígitos)';
     if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Email inválido";
+      newErrors.email = 'Email inválido';
     if (!formData.birthDate)
-      newErrors.birthDate = "Data de nascimento é obrigatória";
+      newErrors.birthDate = 'Data de nascimento é obrigatória';
     if (!formData.password || formData.password.length < 8)
-      newErrors.password = "Senha deve ter pelo menos 8 caracteres";
+      newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -197,15 +197,15 @@ export default function RegisterUserPage() {
 
   const validateStep2 = useCallback(() => {
     const newErrors: FormErrors = {};
-    if (!formData.country) newErrors.country = "País é obrigatório";
-    if (!formData.state) newErrors.state = "Estado é obrigatório";
-    if (!formData.city) newErrors.city = "Cidade é obrigatória";
-    if (!formData.street) newErrors.street = "Rua é obrigatória";
-    if (!formData.number) newErrors.number = "Número é obrigatório";
-    if (!formData.zipCode) newErrors.zipCode = "CEP é obrigatório";
-    if (!formData.phone) newErrors.phone = "Telefone é obrigatório";
+    if (!formData.country) newErrors.country = 'País é obrigatório';
+    if (!formData.state) newErrors.state = 'Estado é obrigatório';
+    if (!formData.city) newErrors.city = 'Cidade é obrigatória';
+    if (!formData.street) newErrors.street = 'Rua é obrigatória';
+    if (!formData.number) newErrors.number = 'Número é obrigatório';
+    if (!formData.zipCode) newErrors.zipCode = 'CEP é obrigatório';
+    if (!formData.phone) newErrors.phone = 'Telefone é obrigatório';
     if (!formData.agreeTerms)
-      newErrors.agreeTerms = "Você deve concordar com os termos";
+      newErrors.agreeTerms = 'Você deve concordar com os termos';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -233,10 +233,20 @@ export default function RegisterUserPage() {
       setFormData((prev) => ({ ...prev, selectedPlan: plan }));
 
       try {
+        // Envia apenas os campos necessários para a API
+        const payload = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          role: "purchase_manager",
+          stripeAccountId: null,
+        };
+
         const res = await fetch("/api/auth/register-user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, selectedPlan: plan }),
+          body: JSON.stringify(payload),
         });
 
         if (res.ok) {
@@ -244,11 +254,16 @@ export default function RegisterUserPage() {
         } else {
           const errorData = await res.json();
           setErrors({
-            general: errorData.error || "Falha no registro. Tente novamente.",
+            general:
+              errorData.error || "Falha no registro. Tente novamente.",
+            details: errorData.details || "",
           });
         }
-      } catch {
-        setErrors({ general: "Erro no servidor. Tente novamente." });
+      } catch (error) {
+        setErrors({
+          general: "Erro no servidor. Tente novamente.",
+          details: error instanceof Error ? error.message : 'Erro desconhecido',
+        });
       } finally {
         setLoading(false);
       }
@@ -256,7 +271,7 @@ export default function RegisterUserPage() {
     [formData, router]
   );
 
-  // Render form steps
+  // Renderização dos passos do formulário
   const renderFormStep = () => {
     switch (step) {
       case 1:
@@ -285,11 +300,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="João"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.firstName && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.firstName && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.firstName}
-                  aria-describedby={errors.firstName ? "firstName-error" : undefined}
+                  aria-describedby={errors.firstName ? 'firstName-error' : undefined}
                 />
                 {errors.firstName && (
                   <p id="firstName-error" className="text-rose-400 text-xs">
@@ -311,11 +326,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="Silva"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.lastName && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.lastName && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.lastName}
-                  aria-describedby={errors.lastName ? "lastName-error" : undefined}
+                  aria-describedby={errors.lastName ? 'lastName-error' : undefined}
                 />
                 {errors.lastName && (
                   <p id="lastName-error" className="text-rose-400 text-xs">
@@ -339,11 +354,11 @@ export default function RegisterUserPage() {
                 onChange={handleChange}
                 placeholder="seu@email.com"
                 className={cn(
-                  "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                  errors.email && "border-rose-500/50"
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.email && 'border-rose-500/50'
                 )}
                 aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
+                aria-describedby={errors.email ? 'email-error' : undefined}
               />
               {errors.email && (
                 <p id="email-error" className="text-rose-400 text-xs">
@@ -365,11 +380,11 @@ export default function RegisterUserPage() {
                 onChange={handleChange}
                 placeholder="Apenas números (11 dígitos)"
                 className={cn(
-                  "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                  errors.cpf && "border-rose-500/50"
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.cpf && 'border-rose-500/50'
                 )}
                 aria-invalid={!!errors.cpf}
-                aria-describedby={errors.cpf ? "cpf-error" : undefined}
+                aria-describedby={errors.cpf ? 'cpf-error' : undefined}
               />
               {errors.cpf && (
                 <p id="cpf-error" className="text-rose-400 text-xs">
@@ -391,11 +406,11 @@ export default function RegisterUserPage() {
                 value={formData.birthDate}
                 onChange={handleChange}
                 className={cn(
-                  "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                  errors.birthDate && "border-rose-500/50"
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.birthDate && 'border-rose-500/50'
                 )}
                 aria-invalid={!!errors.birthDate}
-                aria-describedby={errors.birthDate ? "birthDate-error" : undefined}
+                aria-describedby={errors.birthDate ? 'birthDate-error' : undefined}
               />
               {errors.birthDate && (
                 <p id="birthDate-error" className="text-rose-400 text-xs">
@@ -414,22 +429,22 @@ export default function RegisterUserPage() {
                 <Input
                   id="password"
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11 pr-10",
-                    errors.password && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11 pr-10',
+                    errors.password && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? "password-error" : undefined}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white/90 transition-colors"
-                  aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -449,7 +464,7 @@ export default function RegisterUserPage() {
               disabled={loading}
               className="w-full h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 transition-all duration-200 font-medium"
             >
-              {loading ? "Carregando..." : "Próximo"}
+              {loading ? 'Carregando...' : 'Próximo'}
             </Button>
           </motion.form>
         );
@@ -478,11 +493,11 @@ export default function RegisterUserPage() {
                 onChange={handleChange}
                 placeholder="Brasil"
                 className={cn(
-                  "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                  errors.country && "border-rose-500/50"
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.country && 'border-rose-500/50'
                 )}
                 aria-invalid={!!errors.country}
-                aria-describedby={errors.country ? "country-error" : undefined}
+                aria-describedby={errors.country ? 'country-error' : undefined}
               />
               {errors.country && (
                 <p id="country-error" className="text-rose-400 text-xs">
@@ -505,11 +520,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="SP"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.state && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.state && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.state}
-                  aria-describedby={errors.state ? "state-error" : undefined}
+                  aria-describedby={errors.state ? 'state-error' : undefined}
                 />
                 {errors.state && (
                   <p id="state-error" className="text-rose-400 text-xs">
@@ -531,11 +546,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="São Paulo"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.city && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.city && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.city}
-                  aria-describedby={errors.city ? "city-error" : undefined}
+                  aria-describedby={errors.city ? 'city-error' : undefined}
                 />
                 {errors.city && (
                   <p id="city-error" className="text-rose-400 text-xs">
@@ -556,11 +571,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="Av. Principal"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.street && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.street && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.street}
-                  aria-describedby={errors.street ? "street-error" : undefined}
+                  aria-describedby={errors.street ? 'street-error' : undefined}
                 />
                 {errors.street && (
                   <p id="street-error" className="text-rose-400 text-xs">
@@ -579,11 +594,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="123"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.number && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.number && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.number}
-                  aria-describedby={errors.number ? "number-error" : undefined}
+                  aria-describedby={errors.number ? 'number-error' : undefined}
                 />
                 {errors.number && (
                   <p id="number-error" className="text-rose-400 text-xs">
@@ -617,11 +632,11 @@ export default function RegisterUserPage() {
                   onChange={handleChange}
                   placeholder="00000-000"
                   className={cn(
-                    "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                    errors.zipCode && "border-rose-500/50"
+                    'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                    errors.zipCode && 'border-rose-500/50'
                   )}
                   aria-invalid={!!errors.zipCode}
-                  aria-describedby={errors.zipCode ? "zipCode-error" : undefined}
+                  aria-describedby={errors.zipCode ? 'zipCode-error' : undefined}
                 />
                 {errors.zipCode && (
                   <p id="zipCode-error" className="text-rose-400 text-xs">
@@ -644,11 +659,11 @@ export default function RegisterUserPage() {
                 onChange={handleChange}
                 placeholder="(11) 99999-9999"
                 className={cn(
-                  "bg-white/5 border-white/10 focus:border-indigo-500/50 h-11",
-                  errors.phone && "border-rose-500/50"
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.phone && 'border-rose-500/50'
                 )}
                 aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? "phone-error" : undefined}
+                aria-describedby={errors.phone ? 'phone-error' : undefined}
               />
               {errors.phone && (
                 <p id="phone-error" className="text-rose-400 text-xs">
@@ -661,26 +676,26 @@ export default function RegisterUserPage() {
                 id="agreeTerms"
                 checked={formData.agreeTerms}
                 onCheckedChange={(checked) =>
-                  handleCheckboxChange("agreeTerms", checked as boolean)
+                  handleCheckboxChange('agreeTerms', checked as boolean)
                 }
                 className="border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
                 aria-invalid={!!errors.agreeTerms}
                 aria-describedby={
-                  errors.agreeTerms ? "agreeTerms-error" : undefined
+                  errors.agreeTerms ? 'agreeTerms-error' : undefined
                 }
               />
               <Label
                 htmlFor="agreeTerms"
                 className={cn(
-                  "text-sm leading-tight",
-                  errors.agreeTerms ? "text-rose-400" : "text-white/70"
+                  'text-sm leading-tight',
+                  errors.agreeTerms ? 'text-rose-400' : 'text-white/70'
                 )}
               >
-                Concordo com os{" "}
+                Concordo com os{' '}
                 <Link href="/terms" className="text-indigo-400 hover:underline">
                   Termos
-                </Link>{" "}
-                e{" "}
+                </Link>{' '}
+                e{' '}
                 <Link
                   href="/privacy"
                   className="text-indigo-400 hover:underline"
@@ -708,7 +723,7 @@ export default function RegisterUserPage() {
                 disabled={loading}
                 className="w-2/3 h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 transition-all duration-200 font-medium"
               >
-                {loading ? "Carregando..." : "Finalizar"}
+                {loading ? 'Carregando...' : 'Finalizar'}
               </Button>
             </div>
           </motion.form>
@@ -738,16 +753,16 @@ export default function RegisterUserPage() {
                   key={plan.id}
                   whileHover={{ scale: 1.02 }}
                   className={cn(
-                    "p-5 border rounded-lg cursor-pointer hover:border-indigo-500/70 transition-all duration-200 relative",
+                    'p-5 border rounded-lg cursor-pointer hover:border-indigo-500/70 transition-all duration-200 relative',
                     plan.isPopular
-                      ? "bg-gradient-to-br from-indigo-500/[0.15] to-rose-500/[0.08] border-white/[0.15]"
-                      : "bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.1]"
+                      ? 'bg-gradient-to-br from-indigo-500/[0.15] to-rose-500/[0.08] border-white/[0.15]'
+                      : 'bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.1]'
                   )}
                   onClick={() => handleFinalSubmit(plan.id)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       handleFinalSubmit(plan.id);
                     }
@@ -770,11 +785,16 @@ export default function RegisterUserPage() {
                 </motion.div>
               ))}
             </div>
-            {errors.general && (
+            {(errors.general || errors.details) && (
               <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-lg">
                 <p className="text-rose-400 text-center text-sm">
                   {errors.general}
                 </p>
+                {errors.details && (
+                  <p className="text-rose-400 text-center text-xs mt-1">
+                    {errors.details}
+                  </p>
+                )}
               </div>
             )}
             <Button
@@ -794,7 +814,7 @@ export default function RegisterUserPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-[#030303]">
-      {/* Background gradients and shapes */}
+      {/* Gradientes e formas de fundo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(120,80,255,0.15),transparent_70%),radial-gradient(circle_at_25%_60%,rgba(255,100,150,0.1),transparent_50%)]" />
       <div className="absolute inset-0 overflow-hidden">
         <ElegantShape
@@ -815,7 +835,7 @@ export default function RegisterUserPage() {
         />
       </div>
 
-      {/* Content container */}
+      {/* Container de conteúdo */}
       <div className="relative z-10 w-full max-w-md px-4 py-8">
         <div className="bg-black/30 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-xl">
           <motion.header
@@ -844,7 +864,7 @@ export default function RegisterUserPage() {
               Registre-se para utilizar nossos serviços de redirecionamento
               internacional
             </p>
-            {/* Progress bar */}
+            {/* Barra de progresso */}
             <div className="w-full h-1 bg-white/10 rounded-full mt-5 overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-indigo-500 to-rose-500"
@@ -853,25 +873,25 @@ export default function RegisterUserPage() {
                 transition={{ duration: 0.5 }}
               />
             </div>
-            {/* Step indicators */}
+            {/* Indicadores de passos */}
             <nav className="flex justify-between mt-2 px-2" aria-label="Form progress">
               <span
                 className={`text-xs ${
-                  step >= 1 ? "text-indigo-400" : "text-white/30"
+                  step >= 1 ? 'text-indigo-400' : 'text-white/30'
                 }`}
               >
                 Pessoal
               </span>
               <span
                 className={`text-xs ${
-                  step >= 2 ? "text-indigo-400" : "text-white/30"
+                  step >= 2 ? 'text-indigo-400' : 'text-white/30'
                 }`}
               >
                 Endereço
               </span>
               <span
                 className={`text-xs ${
-                  step >= 3 ? "text-indigo-400" : "text-white/30"
+                  step >= 3 ? 'text-indigo-400' : 'text-white/30'
                 }`}
               >
                 Plano
@@ -886,7 +906,7 @@ export default function RegisterUserPage() {
           {step < 3 && (
             <div className="mt-6 text-center">
               <p className="text-white/50 text-sm">
-                Já tem uma conta?{" "}
+                Já tem uma conta?{' '}
                 <Link
                   href="/auth/login"
                   className="text-indigo-400 hover:underline"

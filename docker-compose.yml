@@ -51,9 +51,16 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://chatapp-backend:8081
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: admin
+      DB_NAME: companydb
     depends_on:
-      - mongodb
-      - mysql
+      mongodb:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     networks:
       - shared-network
     volumes:
