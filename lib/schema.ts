@@ -29,6 +29,10 @@ export const companies = mysqlTable("companies", {
 
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").references(() => companies.id, {
+    onDelete: "set null",
+    onUpdate: "cascade",
+  }), // Nullable foreign key
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -54,7 +58,7 @@ export const companyMembers = mysqlTable(
     companyId: int("company_id")
       .references(() => companies.id, { onDelete: "cascade" })
       .notNull(),
-    role: varchar("role", { length: 50 }).notNull().default("member"), // Ex: "admin", "member", "purchase_manager"
+    role: varchar("role", { length: 50 }).notNull().default("member"),
     invitedAt: datetime("invited_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -150,16 +154,21 @@ export const exchangeRates = mysqlTable("exchange_rates", {
 });
 
 // Relations
-export const companyRelations = relations(companies, ({ many }) => ({
+export const companyRelations = relations(companies, ({ many, one }) => ({
   members: many(companyMembers),
   imports: many(imports),
+  users: many(users), // Users associated with this company via company_id
 }));
 
-export const userRelations = relations(users, ({ many }) => ({
+export const userRelations = relations(users, ({ many, one }) => ({
   memberships: many(companyMembers),
   sentMessages: many(messages, { relationName: "sender" }),
   receivedMessages: many(messages, { relationName: "receiver" }),
   imports: many(imports),
+  company: one(companies, {
+    fields: [users.companyId],
+    references: [companies.id],
+  }), // Company associated with this user
 }));
 
 export const companyMemberRelations = relations(companyMembers, ({ one }) => ({
