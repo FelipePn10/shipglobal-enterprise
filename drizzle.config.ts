@@ -12,4 +12,5 @@ export default defineConfig({
     database: process.env.DB_NAME || 'companydb',
   },
   verbose: true,
+  strict: true,
 });

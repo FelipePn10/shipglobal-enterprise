@@ -53,5 +53,5 @@ export const db = drizzle(pool, {
     importRelations,
   },
   mode: "default",
-  logger: process.env.NODE_ENV === "development", // Enable query logging in development
+  logger: process.env.NODE_ENV === "development",
 });

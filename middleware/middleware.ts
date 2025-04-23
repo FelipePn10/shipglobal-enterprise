@@ -17,7 +17,6 @@ export async function middleware(request: NextRequest) {
     const devHeaders = new Headers(request.headers);
     devHeaders.set('user-id', 'dev-user-123');
     devHeaders.set('user-type', 'user');
-    // Não definimos company-id por padrão no dev mode
     return NextResponse.next({ request: { headers: devHeaders } });
   }
 
@@ -34,9 +33,9 @@ export async function middleware(request: NextRequest) {
     '/auth/login',
     '/auth/register',
     '/auth/error',
-    '/api/auth',
+    '/api/auth', // Covers /api/auth/register-user
     '/_next/static',
-    '_next/image',
+    '/_next/image',
     '/favicon.ico',
   ];
 
@@ -56,22 +55,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Adiciona cabeçalhos personalizados para requisições autenticadas
+  // Adiciona cabeçalhos personalizados para HAPPENEDrequisições autenticadas
   const headers = new Headers(request.headers);
   headers.set('user-id', token.id);
   headers.set('user-type', token.type || 'user');
-  
-  // Adiciona company-id apenas se existir e o usuário for do tipo 'user'
+
   if (token.type === 'user' && token.companyId) {
     headers.set('company-id', token.companyId);
   }
-  
-  // Para empresas, o company-id é o próprio ID
+
   if (token.type === 'company') {
     headers.set('company-id', token.id);
   }
 
-  // Verificação de rotas protegidas específicas
   if (pathname.startsWith('/dashboard/company') && token.type !== 'company') {
     return NextResponse.redirect(new URL('/dashboard', origin));
   }
@@ -85,14 +81,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - api/trpc routes
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!api/trpc|_next/static|_next/image|favicon.ico|public).*)',
   ],
 };
