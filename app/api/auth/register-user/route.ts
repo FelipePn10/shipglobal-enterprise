@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { users, companies } from "@/lib/schema";
 import { z } from "zod";
-
-// Define TypeScript interface for type safety
-interface RegisterUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: "purchase_manager" | "admin";
-  companyId?: number;
-  stripeAccountId?: string | null;
-}
+import { db } from "@/lib/db";
+import { companies, users } from "@/lib/schema";
 
 // Zod schema for validation
 const registerSchema = z.object({
@@ -75,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     // Insert user
     await db.insert(users).values({
-      companyId: companyId || null, // Set to null if not provided
+      companyId: companyId || null,
       firstName,
       lastName,
       email,
@@ -86,12 +75,15 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     });
 
-    return NextResponse.json({ success: true, message: "Usuário registrado com sucesso" }, { status: 201 });
-  } catch (error: any) {
+    return NextResponse.json(
+      { success: true, message: "Usuário registrado com sucesso" },
+      { status: 201 }
+    );
+  } catch (error: unknown) {
     console.error("Erro ao registrar usuário:", error);
 
     // Handle specific MySQL errors
-    if (error.code === "ER_NO_REFERENCED_ROW_2") {
+    if (error instanceof Error && "code" in error && error.code === "ER_NO_REFERENCED_ROW_2") {
       return NextResponse.json(
         { error: "Empresa especificada não existe" },
         { status: 400 }

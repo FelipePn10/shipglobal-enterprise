@@ -32,7 +32,7 @@ export const users = mysqlTable("users", {
   companyId: int("company_id").references(() => companies.id, {
     onDelete: "set null",
     onUpdate: "cascade",
-  }), // Nullable foreign key
+  }),
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -154,10 +154,10 @@ export const exchangeRates = mysqlTable("exchange_rates", {
 });
 
 // Relations
-export const companyRelations = relations(companies, ({ many, one }) => ({
+export const companyRelations = relations(companies, ({ many }) => ({
   members: many(companyMembers),
   imports: many(imports),
-  users: many(users), // Users associated with this company via company_id
+  users: many(users),
 }));
 
 export const userRelations = relations(users, ({ many, one }) => ({
@@ -168,7 +168,7 @@ export const userRelations = relations(users, ({ many, one }) => ({
   company: one(companies, {
     fields: [users.companyId],
     references: [companies.id],
-  }), // Company associated with this user
+  }),
 }));
 
 export const companyMemberRelations = relations(companyMembers, ({ one }) => ({

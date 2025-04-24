@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "b14c5af9-1f92-4477-b5ec-fe7e848865a7",
+  "id": "f0892445-cb84-4a0b-b759-e2811f26e756",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "balances": {
@@ -718,6 +718,13 @@
           "notNull": true,
           "autoincrement": true
         },
+        "company_id": {
+          "name": "company_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "first_name": {
           "name": "first_name",
           "type": "varchar(255)",
@@ -778,7 +785,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "users_company_id_companies_id_fk": {
+          "name": "users_company_id_companies_id_fk",
+          "tableFrom": "users",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",

@@ -1,38 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, companyMembers } from "@/lib/schema";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import { users } from "@/lib/schema";
 
-export async function POST(request: Request) {
-  const data = await request.json();
-  const { firstName, lastName, email, role, companyId } = data;
 
+export async function GET(req: NextRequest) {
   try {
-    // 1. Primeiro cria o usuário (SEM companyId)
-    const hashedPassword = await bcrypt.hash("default_password", 10);
-    const [newUser] = await db.insert(users).values({
-      firstName,
-      lastName,
-      email,
-      role,
-      password: hashedPassword,
-    }).$returningId();
-
-    // 2. Se foi fornecido companyId, cria a associação em company_members
-    if (companyId) {
-      await db.insert(companyMembers).values({
-        userId: newUser.id,
-        companyId,
-        role: "member", // Ou role adequado
-      });
-    }
-
-    return NextResponse.json(newUser);
+    const teamMembers = await db.select().from(users).where(
+      and(
+        eq(users.role, "purchase_manager"),
+        eq(users.role, "admin")
+      )
+    );
+    return NextResponse.json({ success: true, data: teamMembers }, { status: 200 });
   } catch (error) {
-    console.error("Error creating user:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     return NextResponse.json(
-      { error: "Failed to create user" },
+      { error: "Falha ao buscar equipe", details: errorMessage },
       { status: 500 }
     );
   }

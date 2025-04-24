@@ -1,4 +1,4 @@
-CREATE TABLE `balances` (
+CREATE TABLE IF NOT EXISTS `balances` (
 	`id` bigint AUTO_INCREMENT NOT NULL,
 	`user_id` int NOT NULL,
 	`currency` varchar(3) NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE `balances` (
 	CONSTRAINT `balances_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `companies` (
+CREATE TABLE IF NOT EXISTS `companies` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`cnpj` varchar(14) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE `companies` (
 	CONSTRAINT `companies_corporateEmail_unique` UNIQUE(`corporateEmail`)
 );
 --> statement-breakpoint
-CREATE TABLE `company_members` (
+CREATE TABLE IF NOT EXISTS `company_members` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`user_id` int NOT NULL,
 	`company_id` int NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `company_members` (
 	CONSTRAINT `company_members_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `exchange_rates` (
+CREATE TABLE IF NOT EXISTS `exchange_rates` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`base_currency` varchar(10) NOT NULL,
 	`rates` text NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE `exchange_rates` (
 	CONSTRAINT `exchange_rates_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `imports` (
+CREATE TABLE IF NOT EXISTS `imports` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`import_id` varchar(50) NOT NULL,
 	`user_id` int,
@@ -67,7 +67,7 @@ CREATE TABLE `imports` (
 	CONSTRAINT `imports_import_id_unique` UNIQUE(`import_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `messages` (
+CREATE TABLE IF NOT EXISTS `messages` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`sender_id` int NOT NULL,
 	`receiver_id` int NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE `messages` (
 	CONSTRAINT `messages_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `transactions` (
+CREATE TABLE IF NOT EXISTS `transactions` (
 	`id` bigint AUTO_INCREMENT NOT NULL,
 	`user_id` int NOT NULL,
 	`type` varchar(20) NOT NULL,
@@ -91,8 +91,9 @@ CREATE TABLE `transactions` (
 	CONSTRAINT `transactions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` int AUTO_INCREMENT NOT NULL,
+	`company_id` int,
 	`first_name` varchar(255) NOT NULL,
 	`last_name` varchar(255) NOT NULL,
 	`email` varchar(255) NOT NULL,
@@ -105,12 +106,13 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_email_unique` UNIQUE(`email`)
 );
 --> statement-breakpoint
-ALTER TABLE `company_members` ADD CONSTRAINT `company_members_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `company_members` ADD CONSTRAINT `company_members_company_id_companies_id_fk` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `imports` ADD CONSTRAINT `imports_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `imports` ADD CONSTRAINT `imports_company_id_companies_id_fk` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `company_members` ADD CONSTRAINT `company_members_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `company_members` ADD CONSTRAINT `company_members_company_id_fk` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `imports` ADD CONSTRAINT `imports_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `imports` ADD CONSTRAINT `imports_company_id_fk` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `messages` ADD CONSTRAINT `messages_sender_id_users_id_fk` FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `messages` ADD CONSTRAINT `messages_receiver_id_users_id_fk` FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `users` ADD CONSTRAINT `users_company_id_companies_id_fk` FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 CREATE INDEX `user_currency_idx` ON `balances` (`user_id`,`currency`);--> statement-breakpoint
 CREATE INDEX `user_company_idx` ON `company_members` (`user_id`,`company_id`);--> statement-breakpoint
 CREATE INDEX `user_idx` ON `transactions` (`user_id`);--> statement-breakpoint
