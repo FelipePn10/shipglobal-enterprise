@@ -1,47 +1,4 @@
 services:
-  mongodb:
-    image: mongo:6.0
-    container_name: hero-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: admin
-      MONGO_INITDB_DATABASE: hero_transactions
-    ports:
-      - "27017:27017"
-    volumes:
-      - hero-mongodb-data:/data/db
-      - ./mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
-    networks:
-      - shared-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    command:
-      - '--wiredTigerCacheSizeGB=1.5'
-      - '--oplogSize=128'
-      - '--bind_ip_all'
-
-  mysql:
-    image: mysql:8.0
-    container_name: hero-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: companydb
-      TZ: America/Sao_Paulo
-    ports:
-      - "3310:3306"
-    volumes:
-      - hero-mysql-data:/var/lib/mysql
-    networks:
-      - shared-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   frontend:
     build:
       context: .
@@ -50,29 +7,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://chatapp-backend:8081
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: admin
-      DB_NAME: companydb
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
+      NEXT_PUBLIC_API_URL: http://auth-backend:8080
     networks:
-      - shared-network
+      - app-network
     volumes:
       - .:/app:delegated
       - /app/node_modules
       - /app/.next
 
-volumes:
-  hero-mysql-data:
-  hero-mongodb-data:
-
 networks:
-  shared-network:
-    name: shared-network
+  app-network:
+    name: app-network
     external: true
