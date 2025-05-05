@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { registerUser } from '@/services/authService';
 import {
   Eye,
   EyeOff,
@@ -22,6 +23,7 @@ import {
   Package,
   Home,
   BadgeCheck,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +32,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import ElegantShape from '@/components/kokonutui/elegant-shape';
 
-// Tipos
 interface FormData {
   firstName: string;
   lastName: string;
@@ -46,6 +47,7 @@ interface FormData {
   complement: string;
   zipCode: string;
   phone: string;
+  occupation: string;
   agreeTerms: boolean;
   selectedPlan: string;
 }
@@ -54,7 +56,6 @@ interface FormErrors {
   [key: string]: string;
 }
 
-// Planos
 const plans = [
   {
     id: 'basic',
@@ -81,7 +82,6 @@ const plans = [
   },
 ];
 
-// Variantes de animação
 const fadeInVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
@@ -111,7 +111,7 @@ const slideVariants = {
 export default function RegisterUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Informações pessoais, 2: Endereço e contato, 3: Seleção de plano
+  const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [formProgress, setFormProgress] = useState(0);
   const [formData, setFormData] = useState<FormData>({
@@ -129,12 +129,12 @@ export default function RegisterUserPage() {
     complement: '',
     zipCode: '',
     phone: '',
+    occupation: '',
     agreeTerms: false,
     selectedPlan: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Calcula o progresso do formulário
   useEffect(() => {
     const requiredFields: (keyof FormData)[] = [
       'firstName',
@@ -150,6 +150,7 @@ export default function RegisterUserPage() {
       'number',
       'zipCode',
       'phone',
+      'occupation',
     ];
     const filledFields = requiredFields.filter(
       (field) => formData[field] !== ''
@@ -160,7 +161,6 @@ export default function RegisterUserPage() {
     );
   }, [formData]);
 
-  // Handlers
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
@@ -190,6 +190,8 @@ export default function RegisterUserPage() {
       newErrors.birthDate = 'Data de nascimento é obrigatória';
     if (!formData.password || formData.password.length < 8)
       newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
+    if (!formData.occupation)
+      newErrors.occupation = 'Ocupação é obrigatória';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -202,8 +204,10 @@ export default function RegisterUserPage() {
     if (!formData.city) newErrors.city = 'Cidade é obrigatória';
     if (!formData.street) newErrors.street = 'Rua é obrigatória';
     if (!formData.number) newErrors.number = 'Número é obrigatório';
-    if (!formData.zipCode) newErrors.zipCode = 'CEP é obrigatório';
-    if (!formData.phone) newErrors.phone = 'Telefone é obrigatório';
+    if (!formData.zipCode || !/^\d{5}-?\d{3}$/.test(formData.zipCode))
+      newErrors.zipCode = 'CEP inválido';
+    if (!formData.phone || !/^\(\d{2}\)\s?\d{4,5}-?\d{4}$/.test(formData.phone))
+      newErrors.phone = 'Telefone inválido';
     if (!formData.agreeTerms)
       newErrors.agreeTerms = 'Você deve concordar com os termos';
 
@@ -233,36 +237,28 @@ export default function RegisterUserPage() {
       setFormData((prev) => ({ ...prev, selectedPlan: plan }));
 
       try {
-        // Envia apenas os campos necessários para a API
         const payload = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          fullname: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           password: formData.password,
-          role: "purchase_manager",
-          stripeAccountId: null,
+          cpf: formData.cpf,
+          phone: formData.phone.replace(/\D/g, ''),
+          address: `${formData.street}, ${formData.number}`,
+          complement: formData.complement,
+          city: formData.city,
+          state: formData.state,
+          zipcode: formData.zipCode.replace(/\D/g, ''),
+          country: formData.country,
+          occupation: formData.occupation,
         };
 
-        const res = await fetch("/api/auth/register-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          router.push("/auth/login?registered=true");
-        } else {
-          const errorData = await res.json();
-          setErrors({
-            general:
-              errorData.error || "Falha no registro. Tente novamente.",
-            details: errorData.details || "",
-          });
-        }
-      } catch (error) {
+        await registerUser(payload);
+        router.push('/auth/login?registered=true');
+      } catch (error: any) {
+        console.error('Erro completo:', error); // Log detalhado do erro
         setErrors({
-          general: "Erro no servidor. Tente novamente.",
-          details: error instanceof Error ? error.message : 'Erro desconhecido',
+          general: error.response?.data?.message || 'Erro ao registrar usuário',
+          details: error.message || 'Verifique a conexão com o backend e tente novamente',
         });
       } finally {
         setLoading(false);
@@ -271,7 +267,6 @@ export default function RegisterUserPage() {
     [formData, router]
   );
 
-  // Renderização dos passos do formulário
   const renderFormStep = () => {
     switch (step) {
       case 1:
@@ -287,10 +282,7 @@ export default function RegisterUserPage() {
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label
-                  htmlFor="firstName"
-                  className="text-white/80 flex items-center gap-2"
-                >
+                <Label htmlFor="firstName" className="text-white/80 flex items-center gap-2">
                   <User className="h-4 w-4 text-indigo-400" /> Nome
                 </Label>
                 <Input
@@ -303,20 +295,11 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.firstName && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.firstName}
-                  aria-describedby={errors.firstName ? 'firstName-error' : undefined}
                 />
-                {errors.firstName && (
-                  <p id="firstName-error" className="text-rose-400 text-xs">
-                    {errors.firstName}
-                  </p>
-                )}
+                {errors.firstName && <p className="text-rose-400 text-xs">{errors.firstName}</p>}
               </div>
               <div className="space-y-1">
-                <Label
-                  htmlFor="lastName"
-                  className="text-white/80 flex items-center gap-2"
-                >
+                <Label htmlFor="lastName" className="text-white/80">
                   Sobrenome
                 </Label>
                 <Input
@@ -329,21 +312,13 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.lastName && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.lastName}
-                  aria-describedby={errors.lastName ? 'lastName-error' : undefined}
                 />
-                {errors.lastName && (
-                  <p id="lastName-error" className="text-rose-400 text-xs">
-                    {errors.lastName}
-                  </p>
-                )}
+                {errors.lastName && <p className="text-rose-400 text-xs">{errors.lastName}</p>}
               </div>
             </div>
+
             <div className="space-y-1">
-              <Label
-                htmlFor="email"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="email" className="text-white/80 flex items-center gap-2">
                 <Mail className="h-4 w-4 text-indigo-400" /> Email
               </Label>
               <Input
@@ -357,20 +332,12 @@ export default function RegisterUserPage() {
                   'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                   errors.email && 'border-rose-500/50'
                 )}
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
               />
-              {errors.email && (
-                <p id="email-error" className="text-rose-400 text-xs">
-                  {errors.email}
-                </p>
-              )}
+              {errors.email && <p className="text-rose-400 text-xs">{errors.email}</p>}
             </div>
+
             <div className="space-y-1">
-              <Label
-                htmlFor="cpf"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="cpf" className="text-white/80 flex items-center gap-2">
                 <BadgeCheck className="h-4 w-4 text-indigo-400" /> CPF
               </Label>
               <Input
@@ -378,25 +345,17 @@ export default function RegisterUserPage() {
                 name="cpf"
                 value={formData.cpf}
                 onChange={handleChange}
-                placeholder="Apenas números (11 dígitos)"
+                placeholder="000.000.000-00"
                 className={cn(
                   'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                   errors.cpf && 'border-rose-500/50'
                 )}
-                aria-invalid={!!errors.cpf}
-                aria-describedby={errors.cpf ? 'cpf-error' : undefined}
               />
-              {errors.cpf && (
-                <p id="cpf-error" className="text-rose-400 text-xs">
-                  {errors.cpf}
-                </p>
-              )}
+              {errors.cpf && <p className="text-rose-400 text-xs">{errors.cpf}</p>}
             </div>
+
             <div className="space-y-1">
-              <Label
-                htmlFor="birthDate"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="birthDate" className="text-white/80 flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-indigo-400" /> Data de Nascimento
               </Label>
               <Input
@@ -409,20 +368,30 @@ export default function RegisterUserPage() {
                   'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                   errors.birthDate && 'border-rose-500/50'
                 )}
-                aria-invalid={!!errors.birthDate}
-                aria-describedby={errors.birthDate ? 'birthDate-error' : undefined}
               />
-              {errors.birthDate && (
-                <p id="birthDate-error" className="text-rose-400 text-xs">
-                  {errors.birthDate}
-                </p>
-              )}
+              {errors.birthDate && <p className="text-rose-400 text-xs">{errors.birthDate}</p>}
             </div>
+
             <div className="space-y-1">
-              <Label
-                htmlFor="password"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="occupation" className="text-white/80 flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-indigo-400" /> Ocupação
+              </Label>
+              <Input
+                id="occupation"
+                name="occupation"
+                value={formData.occupation}
+                onChange={handleChange}
+                placeholder="Sua profissão"
+                className={cn(
+                  'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
+                  errors.occupation && 'border-rose-500/50'
+                )}
+              />
+              {errors.occupation && <p className="text-rose-400 text-xs">{errors.occupation}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-white/80 flex items-center gap-2">
                 <Lock className="h-4 w-4 text-indigo-400" /> Senha
               </Label>
               <div className="relative">
@@ -437,32 +406,22 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11 pr-10',
                     errors.password && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.password}
-                  aria-describedby={errors.password ? 'password-error' : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white/90 transition-colors"
-                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white/90"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && (
-                <p id="password-error" className="text-rose-400 text-xs">
-                  {errors.password}
-                </p>
-              )}
+              {errors.password && <p className="text-rose-400 text-xs">{errors.password}</p>}
             </div>
+
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 transition-all duration-200 font-medium"
+              className="w-full h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 font-medium"
             >
               {loading ? 'Carregando...' : 'Próximo'}
             </Button>
@@ -480,10 +439,7 @@ export default function RegisterUserPage() {
             className="space-y-4 my-6"
           >
             <div className="space-y-1">
-              <Label
-                htmlFor="country"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="country" className="text-white/80 flex items-center gap-2">
                 <Globe className="h-4 w-4 text-indigo-400" /> País
               </Label>
               <Input
@@ -491,26 +447,17 @@ export default function RegisterUserPage() {
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                placeholder="Brasil"
                 className={cn(
                   'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                   errors.country && 'border-rose-500/50'
                 )}
-                aria-invalid={!!errors.country}
-                aria-describedby={errors.country ? 'country-error' : undefined}
               />
-              {errors.country && (
-                <p id="country-error" className="text-rose-400 text-xs">
-                  {errors.country}
-                </p>
-              )}
+              {errors.country && <p className="text-rose-400 text-xs">{errors.country}</p>}
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label
-                  htmlFor="state"
-                  className="text-white/80 flex items-center gap-2"
-                >
+                <Label htmlFor="state" className="text-white/80 flex items-center gap-2">
                   <Map className="h-4 w-4 text-indigo-400" /> Estado
                 </Label>
                 <Input
@@ -523,20 +470,11 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.state && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.state}
-                  aria-describedby={errors.state ? 'state-error' : undefined}
                 />
-                {errors.state && (
-                  <p id="state-error" className="text-rose-400 text-xs">
-                    {errors.state}
-                  </p>
-                )}
+                {errors.state && <p className="text-rose-400 text-xs">{errors.state}</p>}
               </div>
               <div className="space-y-1">
-                <Label
-                  htmlFor="city"
-                  className="text-white/80 flex items-center gap-2"
-                >
+                <Label htmlFor="city" className="text-white/80 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-indigo-400" /> Cidade
                 </Label>
                 <Input
@@ -549,16 +487,11 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.city && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.city}
-                  aria-describedby={errors.city ? 'city-error' : undefined}
                 />
-                {errors.city && (
-                  <p id="city-error" className="text-rose-400 text-xs">
-                    {errors.city}
-                  </p>
-                )}
+                {errors.city && <p className="text-rose-400 text-xs">{errors.city}</p>}
               </div>
             </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1 col-span-2">
                 <Label htmlFor="street" className="text-white/80">
@@ -574,14 +507,8 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.street && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.street}
-                  aria-describedby={errors.street ? 'street-error' : undefined}
                 />
-                {errors.street && (
-                  <p id="street-error" className="text-rose-400 text-xs">
-                    {errors.street}
-                  </p>
-                )}
+                {errors.street && <p className="text-rose-400 text-xs">{errors.street}</p>}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="number" className="text-white/80">
@@ -597,16 +524,11 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.number && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.number}
-                  aria-describedby={errors.number ? 'number-error' : undefined}
                 />
-                {errors.number && (
-                  <p id="number-error" className="text-rose-400 text-xs">
-                    {errors.number}
-                  </p>
-                )}
+                {errors.number && <p className="text-rose-400 text-xs">{errors.number}</p>}
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="complement" className="text-white/80">
@@ -635,21 +557,13 @@ export default function RegisterUserPage() {
                     'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                     errors.zipCode && 'border-rose-500/50'
                   )}
-                  aria-invalid={!!errors.zipCode}
-                  aria-describedby={errors.zipCode ? 'zipCode-error' : undefined}
                 />
-                {errors.zipCode && (
-                  <p id="zipCode-error" className="text-rose-400 text-xs">
-                    {errors.zipCode}
-                  </p>
-                )}
+                {errors.zipCode && <p className="text-rose-400 text-xs">{errors.zipCode}</p>}
               </div>
             </div>
+
             <div className="space-y-1">
-              <Label
-                htmlFor="phone"
-                className="text-white/80 flex items-center gap-2"
-              >
+              <Label htmlFor="phone" className="text-white/80 flex items-center gap-2">
                 <Phone className="h-4 w-4 text-indigo-400" /> Telefone
               </Label>
               <Input
@@ -662,15 +576,10 @@ export default function RegisterUserPage() {
                   'bg-white/5 border-white/10 focus:border-indigo-500/50 h-11',
                   errors.phone && 'border-rose-500/50'
                 )}
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? 'phone-error' : undefined}
               />
-              {errors.phone && (
-                <p id="phone-error" className="text-rose-400 text-xs">
-                  {errors.phone}
-                </p>
-              )}
+              {errors.phone && <p className="text-rose-400 text-xs">{errors.phone}</p>}
             </div>
+
             <div className="flex items-start space-x-2 py-2">
               <Checkbox
                 id="agreeTerms"
@@ -679,36 +588,23 @@ export default function RegisterUserPage() {
                   handleCheckboxChange('agreeTerms', checked as boolean)
                 }
                 className="border-white/30 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
-                aria-invalid={!!errors.agreeTerms}
-                aria-describedby={
-                  errors.agreeTerms ? 'agreeTerms-error' : undefined
-                }
               />
-              <Label
-                htmlFor="agreeTerms"
-                className={cn(
-                  'text-sm leading-tight',
-                  errors.agreeTerms ? 'text-rose-400' : 'text-white/70'
-                )}
-              >
+              <Label htmlFor="agreeTerms" className={cn(
+                'text-sm leading-tight',
+                errors.agreeTerms ? 'text-rose-400' : 'text-white/70'
+              )}>
                 Concordo com os{' '}
                 <Link href="/terms" className="text-indigo-400 hover:underline">
                   Termos
                 </Link>{' '}
                 e{' '}
-                <Link
-                  href="/privacy"
-                  className="text-indigo-400 hover:underline"
-                >
+                <Link href="/privacy" className="text-indigo-400 hover:underline">
                   Política de Privacidade
                 </Link>
               </Label>
             </div>
-            {errors.agreeTerms && (
-              <p id="agreeTerms-error" className="text-rose-400 text-xs -mt-2">
-                {errors.agreeTerms}
-              </p>
-            )}
+            {errors.agreeTerms && <p className="text-rose-400 text-xs -mt-2">{errors.agreeTerms}</p>}
+
             <div className="flex gap-3">
               <Button
                 type="button"
@@ -721,7 +617,7 @@ export default function RegisterUserPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-2/3 h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 transition-all duration-200 font-medium"
+                className="w-2/3 h-11 bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 font-medium"
               >
                 {loading ? 'Carregando...' : 'Finalizar'}
               </Button>
@@ -740,13 +636,10 @@ export default function RegisterUserPage() {
           >
             <div className="text-center mb-6">
               <CheckCircle2 className="h-16 w-16 text-green-400 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-white">
-                Estamos quase lá!
-              </h2>
-              <p className="text-white/70 mt-2">
-                Escolha seu plano de redirecionamento
-              </p>
+              <h2 className="text-xl font-bold text-white">Estamos quase lá!</h2>
+              <p className="text-white/70 mt-2">Escolha seu plano de redirecionamento</p>
             </div>
+
             <div className="grid grid-cols-1 gap-4">
               {plans.map((plan) => (
                 <motion.div
@@ -759,15 +652,6 @@ export default function RegisterUserPage() {
                       : 'bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.1]'
                   )}
                   onClick={() => handleFinalSubmit(plan.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleFinalSubmit(plan.id);
-                    }
-                  }}
-                  aria-label={`Selecionar ${plan.name}`}
                 >
                   {plan.isPopular && (
                     <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
@@ -779,24 +663,20 @@ export default function RegisterUserPage() {
                     {plan.name}
                   </h3>
                   <p className="text-white/70 text-sm ml-7">{plan.description}</p>
-                  <div className="ml-7 mt-2 text-white/80 font-medium">
-                    {plan.price}
-                  </div>
+                  <div className="ml-7 mt-2 text-white/80 font-medium">{plan.price}</div>
                 </motion.div>
               ))}
             </div>
+
             {(errors.general || errors.details) && (
               <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-lg">
-                <p className="text-rose-400 text-center text-sm">
-                  {errors.general}
-                </p>
+                <p className="text-rose-400 text-center text-sm">{errors.general}</p>
                 {errors.details && (
-                  <p className="text-rose-400 text-center text-xs mt-1">
-                    {errors.details}
-                  </p>
+                  <p className="text-rose-400 text-center text-xs mt-1">{errors.details}</p>
                 )}
               </div>
             )}
+
             <Button
               type="button"
               onClick={() => setStep(2)}
@@ -814,7 +694,6 @@ export default function RegisterUserPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-[#030303]">
-      {/* Gradientes e formas de fundo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(120,80,255,0.15),transparent_70%),radial-gradient(circle_at_25%_60%,rgba(255,100,150,0.1),transparent_50%)]" />
       <div className="absolute inset-0 overflow-hidden">
         <ElegantShape
@@ -835,7 +714,6 @@ export default function RegisterUserPage() {
         />
       </div>
 
-      {/* Container de conteúdo */}
       <div className="relative z-10 w-full max-w-md px-4 py-8">
         <div className="bg-black/30 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8 shadow-xl">
           <motion.header
@@ -857,14 +735,10 @@ export default function RegisterUserPage() {
               </div>
               <span className="text-xl font-bold text-white">Redirex</span>
             </Link>
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Criar Conta Pessoal
-            </h1>
+            <h1 className="text-2xl font-bold text-white mb-2">Criar Conta Pessoal</h1>
             <p className="text-white/60">
-              Registre-se para utilizar nossos serviços de redirecionamento
-              internacional
+              Registre-se para utilizar nossos serviços de redirecionamento internacional
             </p>
-            {/* Barra de progresso */}
             <div className="w-full h-1 bg-white/10 rounded-full mt-5 overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-indigo-500 to-rose-500"
@@ -873,27 +747,14 @@ export default function RegisterUserPage() {
                 transition={{ duration: 0.5 }}
               />
             </div>
-            {/* Indicadores de passos */}
             <nav className="flex justify-between mt-2 px-2" aria-label="Form progress">
-              <span
-                className={`text-xs ${
-                  step >= 1 ? 'text-indigo-400' : 'text-white/30'
-                }`}
-              >
+              <span className={`text-xs ${step >= 1 ? 'text-indigo-400' : 'text-white/30'}`}>
                 Pessoal
               </span>
-              <span
-                className={`text-xs ${
-                  step >= 2 ? 'text-indigo-400' : 'text-white/30'
-                }`}
-              >
+              <span className={`text-xs ${step >= 2 ? 'text-indigo-400' : 'text-white/30'}`}>
                 Endereço
               </span>
-              <span
-                className={`text-xs ${
-                  step >= 3 ? 'text-indigo-400' : 'text-white/30'
-                }`}
-              >
+              <span className={`text-xs ${step >= 3 ? 'text-indigo-400' : 'text-white/30'}`}>
                 Plano
               </span>
             </nav>
@@ -907,10 +768,7 @@ export default function RegisterUserPage() {
             <div className="mt-6 text-center">
               <p className="text-white/50 text-sm">
                 Já tem uma conta?{' '}
-                <Link
-                  href="/auth/login"
-                  className="text-indigo-400 hover:underline"
-                >
+                <Link href="/auth/login" className="text-indigo-400 hover:underline">
                   Faça login
                 </Link>
               </p>
@@ -932,16 +790,10 @@ export default function RegisterUserPage() {
             <Link href="/terms" className="text-xs text-white/60 hover:text-white/90">
               Termos
             </Link>
-            <Link
-              href="/privacy"
-              className="text-xs text-white/60 hover:text-white/90"
-            >
+            <Link href="/privacy" className="text-xs text-white/60 hover:text-white/90">
               Privacidade
             </Link>
-            <Link
-              href="/contact"
-              className="text-xs text-white/60 hover:text-white/90"
-            >
+            <Link href="/contact" className="text-xs text-white/60 hover:text-white/90">
               Contato
             </Link>
           </nav>

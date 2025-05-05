@@ -1,3 +1,0 @@
-[mysqld]
-default-time-zone = '-03:00'
-log_timestamps = SYSTEM
