@@ -7,7 +7,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://auth-backend:8080
+      NEXT_PUBLIC_API_URL: http://backend:8080
     networks:
       - app-network
     volumes:
