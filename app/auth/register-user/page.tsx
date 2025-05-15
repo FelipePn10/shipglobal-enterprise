@@ -5,32 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { registerUser } from '@/services/authService';
-import {
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
-  User,
-  Calendar,
-  CheckCircle2,
-  Map,
-  Phone,
-  CreditCard,
-  Globe,
-  MapPin,
-  ChevronLeft,
-  Package,
-  Home,
-  BadgeCheck,
-  Briefcase,
-} from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, Calendar, CheckCircle2, Map, Phone, CreditCard, Globe, MapPin, ChevronLeft, Package, Home, BadgeCheck, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import ElegantShape from '@/components/kokonutui/elegant-shape';
+import { register } from '@/lib/api/auth';
+import type { RegisterData } from '@/lib/api/auth/types/auth';
 
 interface FormData {
   firstName: string;
@@ -57,29 +40,9 @@ interface FormErrors {
 }
 
 const plans = [
-  {
-    id: 'basic',
-    name: 'Plano Básico',
-    description: 'Redirecionamento padrão sem taxas mensais.',
-    price: 'Grátis',
-    icon: Package,
-  },
-  {
-    id: 'premium',
-    name: 'Plano Premium',
-    description: 'Consolidação de pacotes, fotos dos itens e rastreamento prioritário.',
-    price: 'R$ 29,90 / mês',
-    icon: CreditCard,
-    isPopular: true,
-  },
-  {
-    id: 'exclusive',
-    name: 'Plano Exclusivo',
-    description:
-      'Todos os benefícios do Premium + endereço exclusivo nos EUA e suporte prioritário.',
-    price: 'R$ 79,90 / mês',
-    icon: Home,
-  },
+  { id: 'BASIC', name: 'Plano Básico', description: 'Redirecionamento padrão sem taxas mensais.', price: 'Grátis', icon: Package },
+  { id: 'PREMIUM', name: 'Plano Premium', description: 'Consolidação de pacotes, fotos dos itens e rastreamento prioritário.', price: 'R$ 29,90 / mês', icon: CreditCard, isPopular: true },
+  { id: 'EXCLUSIVE', name: 'Plano Exclusivo', description: 'Todos os benefícios do Premium + endereço exclusivo nos EUA e suporte prioritário.', price: 'R$ 79,90 / mês', icon: Home },
 ];
 
 const fadeInVariants = {
@@ -137,61 +100,69 @@ export default function RegisterUserPage() {
 
   useEffect(() => {
     const requiredFields: (keyof FormData)[] = [
-      'firstName',
-      'lastName',
-      'email',
-      'birthDate',
-      'cpf',
-      'password',
-      'country',
-      'state',
-      'city',
-      'street',
-      'number',
-      'zipCode',
-      'phone',
-      'occupation',
+      'firstName', 'lastName', 'email', 'birthDate', 'cpf', 'password',
+      'country', 'state', 'city', 'street', 'number', 'zipCode',
+      'phone', 'occupation'
     ];
-    const filledFields = requiredFields.filter(
-      (field) => formData[field] !== ''
+    
+    const filledFields = requiredFields.filter(field => 
+      formData[field] !== '' && formData[field] !== false
     ).length;
+    
     const termsProgress = formData.agreeTerms ? 1 : 0;
     setFormProgress(
-      ((filledFields / requiredFields.length) * 90 + termsProgress * 10)
+      ((filledFields / requiredFields.length) * 90) + (termsProgress * 10)
     );
   }, [formData]);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({ ...prev, [name]: value }));
-      setErrors((prev) => (prev[name] ? { ...prev, [name]: '' } : prev));
-    },
-    []
-  );
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    const maskedValue = () => {
+      switch (name) {
+        case 'cpf':
+          return value
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+            .slice(0, 14);
+        case 'phone':
+          return value
+            .replace(/\D/g, '')
+            .replace(/(\d{0})(\d{2})(\d{0})/, '($1$2) ')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .slice(0, 15);
+        case 'zipCode':
+          return value
+            .replace(/\D/g, '')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .slice(0, 9);
+        default:
+          return value;
+      }
+    };
 
-  const handleCheckboxChange = useCallback(
-    (name: keyof FormData, checked: boolean) => {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-      setErrors((prev) => (prev[name] ? { ...prev, [name]: '' } : prev));
-    },
-    []
-  );
+    setFormData(prev => ({ ...prev, [name]: maskedValue() }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
+  }, []);
+
+  const handleCheckboxChange = useCallback((name: keyof FormData, checked: boolean) => {
+    setFormData(prev => ({ ...prev, [name]: checked }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
+  }, []);
 
   const validateStep1 = useCallback(() => {
     const newErrors: FormErrors = {};
-    if (!formData.firstName) newErrors.firstName = 'Nome é obrigatório';
-    if (!formData.lastName) newErrors.lastName = 'Sobrenome é obrigatório';
-    if (!formData.cpf || !/^\d{11}$/.test(formData.cpf))
-      newErrors.cpf = 'CPF inválido (11 dígitos)';
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = 'Email inválido';
-    if (!formData.birthDate)
-      newErrors.birthDate = 'Data de nascimento é obrigatória';
-    if (!formData.password || formData.password.length < 8)
-      newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
-    if (!formData.occupation)
-      newErrors.occupation = 'Ocupação é obrigatória';
+    const cleanCpf = formData.cpf.replace(/\D/g, '');
+    
+    if (!formData.firstName.trim()) newErrors.firstName = 'Nome é obrigatório';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Sobrenome é obrigatório';
+    if (!cleanCpf || cleanCpf.length !== 11) newErrors.cpf = 'CPF inválido';
+    if (!formData.email.match(/^\S+@\S+\.\S+$/)) newErrors.email = 'Email inválido';
+    if (!formData.birthDate) newErrors.birthDate = 'Data de nascimento é obrigatória';
+    if (formData.password.length < 8) newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
+    if (!formData.occupation.trim()) newErrors.occupation = 'Ocupação é obrigatória';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -199,73 +170,86 @@ export default function RegisterUserPage() {
 
   const validateStep2 = useCallback(() => {
     const newErrors: FormErrors = {};
-    if (!formData.country) newErrors.country = 'País é obrigatório';
-    if (!formData.state) newErrors.state = 'Estado é obrigatório';
-    if (!formData.city) newErrors.city = 'Cidade é obrigatória';
-    if (!formData.street) newErrors.street = 'Rua é obrigatória';
-    if (!formData.number) newErrors.number = 'Número é obrigatório';
-    if (!formData.zipCode || !/^\d{5}-?\d{3}$/.test(formData.zipCode))
-      newErrors.zipCode = 'CEP inválido';
-    if (!formData.phone || !/^\(\d{2}\)\s?\d{4,5}-?\d{4}$/.test(formData.phone))
-      newErrors.phone = 'Telefone inválido';
-    if (!formData.agreeTerms)
-      newErrors.agreeTerms = 'Você deve concordar com os termos';
+    const cleanZipCode = formData.zipCode.replace(/\D/g, '');
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    
+    if (!formData.country.trim()) newErrors.country = 'País é obrigatório';
+    if (!formData.state.trim()) newErrors.state = 'Estado é obrigatório';
+    if (!formData.city.trim()) newErrors.city = 'Cidade é obrigatória';
+    if (!formData.street.trim()) newErrors.street = 'Rua é obrigatória';
+    if (!formData.number.trim()) newErrors.number = 'Número é obrigatório';
+    if (!cleanZipCode || cleanZipCode.length !== 8) newErrors.zipCode = 'CEP inválido';
+    if (!cleanPhone || cleanPhone.length < 10 || cleanPhone.length > 11) newErrors.phone = 'Telefone inválido';
+    if (!formData.agreeTerms) newErrors.agreeTerms = 'Você deve concordar com os termos';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
-  const handleStep1Submit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (validateStep1()) setStep(2);
-    },
-    [validateStep1]
-  );
+  const handleStep1Submit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (validateStep1()) setStep(2);
+  }, [validateStep1]);
 
-  const handleStep2Submit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (validateStep2()) setStep(3);
-    },
-    [validateStep2]
-  );
+  const handleStep2Submit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (validateStep2()) setStep(3);
+  }, [validateStep2]);
 
-  const handleFinalSubmit = useCallback(
-    async (plan: string) => {
-      setLoading(true);
-      setFormData((prev) => ({ ...prev, selectedPlan: plan }));
-
-      try {
-        const payload = {
-          fullname: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          password: formData.password,
-          cpf: formData.cpf,
-          phone: formData.phone.replace(/\D/g, ''),
-          address: `${formData.street}, ${formData.number}`,
+  const handleFinalSubmit = useCallback(async (planId: string) => {
+    setLoading(true);
+    try {
+      const payload: RegisterData = {
+        fullname: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        cpf: formData.cpf.replace(/\D/g, ''),
+        phone: formData.phone.replace(/\D/g, ''),
+        occupation: formData.occupation,
+        role: planId,
+        addresses: [{
+          street: formData.street,
+          number: formData.number,
           complement: formData.complement,
           city: formData.city,
           state: formData.state,
           zipcode: formData.zipCode.replace(/\D/g, ''),
-          country: formData.country,
-          occupation: formData.occupation,
-        };
+          country: formData.country
+        }]
+      };
 
-        await registerUser(payload);
-        router.push('/auth/login?registered=true');
-      } catch (error: any) {
-        console.error('Erro completo:', error); // Log detalhado do erro
-        setErrors({
-          general: error.response?.data?.message || 'Erro ao registrar usuário',
-          details: error.message || 'Verifique a conexão com o backend e tente novamente',
+      await register(payload);
+      router.push('/auth/login?registered=true');
+    } catch (error: any) {
+      const backendError = error.response?.data;
+      const newErrors: FormErrors = {};
+
+      if (backendError?.errors) {
+        backendError.errors.forEach((err: { field: string; message: string }) => {
+          const fieldMap: { [key: string]: string } = {
+            'fullname': 'firstName',
+            'email': 'email',
+            'cpf': 'cpf',
+            'phone': 'phone',
+            'password': 'password',
+            'addresses[0].street': 'street',
+            'addresses[0].number': 'number',
+            'addresses[0].city': 'city',
+            'addresses[0].state': 'state',
+            'addresses[0].zipcode': 'zipCode',
+            'addresses[0].country': 'country'
+          };
+          newErrors[fieldMap[err.field] || err.field] = err.message;
         });
-      } finally {
-        setLoading(false);
+      } else {
+        newErrors.general = backendError?.message || 'Erro ao registrar usuário';
       }
-    },
-    [formData, router]
-  );
+
+      setErrors(newErrors);
+    } finally {
+      setLoading(false);
+    }
+  }, [formData, router]);
 
   const renderFormStep = () => {
     switch (step) {
